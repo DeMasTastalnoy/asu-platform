@@ -1,0 +1,48 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">АСУ-Платформа</div>
+      <div class="logo-sub">Дистанционное обучение</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Система</div>
+      <a class="nav-item" routerLink="/dashboard" routerLinkActive="active">
+        <span class="nav-icon">⊞</span> Дашборд
+      </a>
+      <a class="nav-item" routerLink="/courses" routerLinkActive="active">
+        <span class="nav-icon">📚</span> Курсы
+      </a>
+      <a class="nav-item" routerLink="/simulator" routerLinkActive="active"
+         *ngIf="user()?.primary_role !== 'student'">
+        <span class="nav-icon">⚙</span> Конструктор
+      </a>
+      <a class="nav-item" routerLink="/testing" routerLinkActive="active">
+        <span class="nav-icon">📝</span> Тестирование
+      </a>
+      <a class="nav-item" routerLink="/analytics" routerLinkActive="active"
+         *ngIf="user()?.primary_role !== 'student'">
+        <span class="nav-icon">📊</span> Аналитика
+      </a>
+      <a class="nav-item" routerLink="/admin" routerLinkActive="active"
+         *ngIf="user()?.primary_role === 'admin'">
+        <span class="nav-icon">👤</span> Пользователи
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar">{{ user()?.full_name?.[0] || user()?.username?.[0] | uppercase }}</div>
+        <div>
+          <div class="user-name">{{ user()?.full_name || user()?.username }}</div>
+          <div class="user-role">{{ user()?.primary_role }}</div>
+        </div>
+      </div>
+      <button class="logout-btn" (click)="logout()">Выйти</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <router-outlet />
+  </main>
+</div>

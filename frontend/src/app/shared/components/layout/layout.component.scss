@@ -1,0 +1,42 @@
+.layout { display: flex; height: 100vh; background: #f0f4f8; }
+
+.sidebar {
+  width: 220px; background: #fff;
+  border-right: 1px solid #e8e8e8;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-logo {
+  padding: 20px 16px 16px; border-bottom: 1px solid #e8e8e8;
+  .logo-text { font-size: 14px; font-weight: 600; color: #185FA5; }
+  .logo-sub  { font-size: 11px; color: #999; margin-top: 2px; }
+}
+.nav-section { padding: 8px 0; flex: 1; }
+.nav-label {
+  font-size: 10px; font-weight: 600; color: #bbb;
+  padding: 6px 16px 2px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; font-size: 13px; color: #555;
+  text-decoration: none; transition: background 0.15s;
+  &:hover  { background: #f5f7fa; color: #185FA5; }
+  &.active { background: #EBF4FF; color: #185FA5; font-weight: 500; }
+}
+.nav-icon { font-size: 14px; }
+.sidebar-footer { padding: 12px 16px; border-top: 1px solid #e8e8e8; }
+.user-info { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #185FA5; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; flex-shrink: 0;
+}
+.user-name { font-size: 12px; font-weight: 500; color: #333; }
+.user-role { font-size: 11px; color: #999; }
+.logout-btn {
+  width: 100%; padding: 7px; font-size: 12px;
+  border: 1px solid #ddd; border-radius: 6px;
+  background: transparent; color: #666; cursor: pointer;
+  &:hover { background: #f5f5f5; }
+}
+.main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }

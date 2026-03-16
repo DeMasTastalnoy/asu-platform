@@ -1,0 +1,38 @@
+<div class="page">
+  <div class="topbar">
+    <span class="page-title">Курсы</span>
+    <button class="btn-primary" routerLink="/courses/create"
+            *ngIf="user()?.primary_role !== 'student'">
+      + Создать курс
+    </button>
+  </div>
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка...</div>
+    <div class="empty" *ngIf="!loading && courses.length === 0">
+      <p>Курсов пока нет.</p>
+      <button class="btn-primary" routerLink="/courses/create"
+              *ngIf="user()?.primary_role !== 'student'">
+        Создать первый курс
+      </button>
+    </div>
+    <div class="courses-grid" *ngIf="!loading && courses.length > 0">
+      <div class="course-card" *ngFor="let course of courses">
+        <div class="course-header">
+          <span class="level-badge">Уровень {{ course.level }}</span>
+          <span class="status-badge" [class]="'status-' + course.status">
+            {{ getStatusLabel(course.status) }}
+          </span>
+        </div>
+        <h3 class="course-title">{{ course.title }}</h3>
+        <p class="course-desc">{{ course.description || 'Описание отсутствует' }}</p>
+        <div class="course-meta">
+          <span>{{ course.modules_count }} модулей</span>
+          <span>{{ course.instructor_name }}</span>
+        </div>
+        <div class="course-actions">
+          <a class="btn-outline" [routerLink]="['/courses', course.id]">Открыть</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

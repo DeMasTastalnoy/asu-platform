@@ -1,0 +1,40 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>АСУ-Платформа</h1>
+      <p>Дистанционное обучение операторов</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label>Логин</label>
+        <input
+          type="text"
+          formControlName="username"
+          placeholder="Введите логин"
+          [class.error]="form.get('username')?.invalid && form.get('username')?.touched"
+        />
+      </div>
+
+      <div class="field">
+        <label>Пароль</label>
+        <input
+          type="password"
+          formControlName="password"
+          placeholder="Введите пароль"
+          [class.error]="form.get('password')?.invalid && form.get('password')?.touched"
+        />
+      </div>
+
+      <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+      <button type="submit" [disabled]="loading || form.invalid">
+        {{ loading ? 'Вход...' : 'Войти' }}
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <a routerLink="/auth/register">Регистрация</a>
+    </div>
+  </div>
+</div>
