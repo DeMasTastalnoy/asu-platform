@@ -95,7 +95,8 @@ class CourseDetailSerializer(serializers.ModelSerializer):
 class CourseCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Course
-        fields = ("title", "description", "status", "level", "cover_image")
+        fields = ("id", "title", "description", "status", "level", "cover_image")
+        read_only_fields = ("id",)
 
     def create(self, validated_data):
         validated_data["instructor"] = self.context["request"].user

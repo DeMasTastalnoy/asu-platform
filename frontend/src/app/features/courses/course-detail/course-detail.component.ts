@@ -1,0 +1,63 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+import { ApiService } from '../../../core/services/api.service';
+import { AuthService } from '../../../core/services/auth.service';
+
+@Component({
+  selector: 'app-course-detail',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './course-detail.component.html',
+  styleUrl: './course-detail.component.scss',
+})
+export class CourseDetailComponent implements OnInit {
+  course:  any = null;
+  modules: any[] = [];
+  loading = true;
+  error   = '';
+  user:   any;
+
+  constructor(
+    private api:   ApiService,
+    private auth:  AuthService,
+    private route: ActivatedRoute,
+  ) {
+    this.user = this.auth.currentUser;
+  }
+
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    this.api.get<any>(`courses/${id}/`).subscribe({
+      next: data => {
+        this.course  = data;
+        this.modules = data.modules ?? [];
+        this.loading = false;
+      },
+      error: () => {
+        this.error   = 'Курс не найден.';
+        this.loading = false;
+      },
+    });
+  }
+
+  getTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      lecture: 'Лекция', video: 'Видео',
+      document: 'Документ', test: 'Тест', simulation: 'Симуляция',
+    };
+    return map[type] ?? type;
+  }
+
+  getTypeColor(type: string): string {
+    const map: Record<string, string> = {
+      lecture: 'blue', video: 'green',
+      document: 'gray', test: 'amber', simulation: 'purple',
+    };
+    return map[type] ?? 'gray';
+  }
+
+  getProgressStatus(module: any): string {
+    return module.progress?.status ?? 'not_started';
+  }
+}

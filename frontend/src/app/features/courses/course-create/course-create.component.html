@@ -1,0 +1,62 @@
+<div class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <a routerLink="/courses" class="back-btn">← Назад</a>
+      <span class="page-title">Новый курс</span>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="form-card">
+      <form [formGroup]="form" (ngSubmit)="submit()">
+
+        <div class="field">
+          <label>Название курса <span class="required">*</span></label>
+          <input type="text" formControlName="title"
+                 placeholder="Например: Основы работы оператора АСУ ТП"
+                 [class.error]="form.get('title')?.invalid && form.get('title')?.touched"/>
+          <span class="hint" *ngIf="form.get('title')?.invalid && form.get('title')?.touched">
+            Обязательное поле
+          </span>
+        </div>
+
+        <div class="field">
+          <label>Описание</label>
+          <textarea formControlName="description" rows="4"
+                    placeholder="Краткое описание курса..."></textarea>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Уровень сложности</label>
+            <select formControlName="level">
+              <option value="1">1 — Начальный</option>
+              <option value="2">2 — Базовый</option>
+              <option value="3">3 — Средний</option>
+              <option value="4">4 — Продвинутый</option>
+              <option value="5">5 — Экспертный</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Статус</label>
+            <select formControlName="status">
+              <option value="draft">Черновик</option>
+              <option value="published">Опубликован</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+        <div class="form-actions">
+          <a routerLink="/courses" class="btn-outline">Отмена</a>
+          <button type="submit" class="btn-primary" [disabled]="loading || form.invalid">
+            {{ loading ? 'Создание...' : 'Создать курс' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

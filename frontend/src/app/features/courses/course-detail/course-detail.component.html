@@ -1,0 +1,65 @@
+<div class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <a routerLink="/courses" class="back-btn">← Назад к курсам</a>
+      <span class="page-title">{{ course?.title || 'Загрузка...' }}</span>
+    </div>
+    <div class="topbar-right" *ngIf="course && user()?.primary_role !== 'student'">
+      <span class="status-badge" [class]="'status-' + course.status">
+        {{ course.status === 'published' ? 'Опубликован' : 'Черновик' }}
+      </span>
+      <button class="btn-primary" [routerLink]="['/courses', course.id, 'modules', 'create']">
+        + Добавить модуль
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка...</div>
+    <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="course && !loading">
+      <div class="course-info">
+        <p class="course-desc">{{ course.description || 'Описание отсутствует' }}</p>
+        <div class="course-meta">
+          <span>Инструктор: <strong>{{ course.instructor?.full_name }}</strong></span>
+          <span>Уровень: <strong>{{ course.level }}</strong></span>
+          <span>Модулей: <strong>{{ modules.length }}</strong></span>
+        </div>
+      </div>
+
+      <div class="modules-section">
+        <h3 class="section-title">Модули курса</h3>
+
+        <div class="empty-modules" *ngIf="modules.length === 0">
+          <p>Модулей пока нет.</p>
+          <button class="btn-primary"
+                  [routerLink]="['/courses', course.id, 'modules', 'create']"
+                  *ngIf="user()?.primary_role !== 'student'">
+            Добавить первый модуль
+          </button>
+        </div>
+
+        <div class="modules-list" *ngIf="modules.length > 0">
+          <div class="module-item" *ngFor="let module of modules; let i = index">
+            <div class="module-num">{{ i + 1 }}</div>
+            <div class="module-icon" [class]="'icon-' + getTypeColor(module.type)">
+              {{ getTypeLabel(module.type)[0] }}
+            </div>
+            <div class="module-info">
+              <div class="module-title">{{ module.title }}</div>
+              <div class="module-type">{{ getTypeLabel(module.type) }}</div>
+            </div>
+            <div class="module-status" [class]="'progress-' + getProgressStatus(module)">
+              {{ getProgressStatus(module) === 'completed' ? '✓ Завершён' :
+                 getProgressStatus(module) === 'in_progress' ? '→ В процессе' : '○ Не начат' }}
+            </div>
+            <div class="module-actions">
+              <button class="btn-sm">Открыть</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>
