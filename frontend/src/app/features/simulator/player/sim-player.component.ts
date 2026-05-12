@@ -126,7 +126,10 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   buildNode(el: any): any {
     const p = el.props ?? {};
-    const x = el.x, y = el.y, w = el.width ?? 60, h = el.height ?? 60;
+  const x = el.x ?? 0;
+  const y = el.y ?? 0;
+  const w = Math.max(el.width ?? 60, 20);   // минимум 20px
+  const h = Math.max(el.height ?? 60, 20);  // минимум 20px
 
     switch (el.type) {
       case 'button': {
