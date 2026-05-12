@@ -48,7 +48,7 @@ class SimulationResultSerializer(serializers.ModelSerializer):
 class SimulationSubmitSerializer(serializers.Serializer):
     """Сохранение лога действий студента и автоматическая оценка."""
     simulation_id  = serializers.IntegerField()
-    enrollment_id  = serializers.IntegerField()
+    enrollment_id  = serializers.IntegerField(required=False, allow_null=True)
     actions_log    = serializers.ListField(child=serializers.DictField())
     time_spent_sec = serializers.IntegerField(required=False)
 
@@ -58,36 +58,44 @@ class SimulationSubmitSerializer(serializers.Serializer):
             SimulationTemplate.objects.get(pk=attrs["simulation_id"])
         except SimulationTemplate.DoesNotExist:
             raise serializers.ValidationError({"simulation_id": "Симуляция не найдена."})
-        try:
-            Enrollment.objects.get(pk=attrs["enrollment_id"])
-        except Enrollment.DoesNotExist:
-            raise serializers.ValidationError({"enrollment_id": "Зачисление не найдено."})
+
+        # enrollment_id необязателен — для прямого запуска без курса
+        if attrs.get("enrollment_id"):
+            try:
+                Enrollment.objects.get(pk=attrs["enrollment_id"])
+            except Enrollment.DoesNotExist:
+                raise serializers.ValidationError({"enrollment_id": "Зачисление не найдено."})
         return attrs
 
     def save(self):
         from django.utils import timezone
         from apps.courses.models import Enrollment
 
-        sim        = SimulationTemplate.objects.get(pk=self.validated_data["simulation_id"])
-        enrollment = Enrollment.objects.get(pk=self.validated_data["enrollment_id"])
-        actions    = self.validated_data["actions_log"]
-        attempt_num = SimulationResult.objects.filter(
-            simulation=sim, enrollment=enrollment
-        ).count() + 1
+        sim = SimulationTemplate.objects.get(pk=self.validated_data["simulation_id"])
+        enrollment_id = self.validated_data.get("enrollment_id")
+        actions = self.validated_data["actions_log"]
 
-        # сравниваем лог с эталонным сценарием
+        attempt_num = 1
+        enrollment = None
+
+        if enrollment_id:
+            enrollment = Enrollment.objects.get(pk=enrollment_id)
+            attempt_num = SimulationResult.objects.filter(
+                simulation=sim, enrollment=enrollment
+            ).count() + 1
+
         deviations, score, max_score = self._evaluate(actions, sim.reference_scenario)
 
         result = SimulationResult.objects.create(
-            simulation     = sim,
-            enrollment     = enrollment,
-            attempt_num    = attempt_num,
-            score          = score,
-            max_score      = max_score,
-            actions_log    = actions,
-            deviations     = deviations,
-            time_spent_sec = self.validated_data.get("time_spent_sec"),
-            completed_at   = timezone.now(),
+            simulation=sim,
+            enrollment=enrollment,
+            attempt_num=attempt_num,
+            score=score,
+            max_score=max_score,
+            actions_log=actions,
+            deviations=deviations,
+            time_spent_sec=self.validated_data.get("time_spent_sec"),
+            completed_at=timezone.now(),
         )
         return result
 

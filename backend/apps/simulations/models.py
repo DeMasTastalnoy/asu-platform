@@ -88,8 +88,9 @@ class SimulationResult(models.Model):
     simulation  = models.ForeignKey(
         SimulationTemplate, on_delete=models.CASCADE, related_name="results",
     )
-    enrollment  = models.ForeignKey(
+    enrollment = models.ForeignKey(
         Enrollment, on_delete=models.CASCADE, related_name="simulation_results",
+        null=True, blank=True,  # добавить эти два параметра
     )
     attempt_num = models.PositiveSmallIntegerField("Номер попытки", default=1)
     score       = models.DecimalField("Балл", max_digits=5, decimal_places=2, null=True, blank=True)
