@@ -1,6 +1,6 @@
-import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse, HttpClient } from '@angular/common/http';
+import { HttpInterceptorFn, HttpRequest, HttpHandlerFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, from, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 export const jwtInterceptor: HttpInterceptorFn = (
@@ -8,7 +8,6 @@ export const jwtInterceptor: HttpInterceptorFn = (
   next: HttpHandlerFn,
 ) => {
   const auth  = inject(AuthService);
-  const http  = inject(HttpClient);
   const token = auth.getAccessToken();
 
   const authReq = token
@@ -18,10 +17,15 @@ export const jwtInterceptor: HttpInterceptorFn = (
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401 && auth.getRefreshToken()) {
-        return http.post<{ access: string }>('http://127.0.0.1:8000/api/auth/refresh/', {
-          refresh: auth.getRefreshToken(),
-        }).pipe(
-          switchMap(tokens => {
+        // Используем fetch чтобы избежать циклической зависимости
+        const refreshPromise = fetch('http://127.0.0.1:8000/api/auth/refresh/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh: auth.getRefreshToken() }),
+        }).then(r => r.json());
+
+        return from(refreshPromise).pipe(
+          switchMap((tokens: any) => {
             localStorage.setItem('access_token', tokens.access);
             const retryReq = req.clone({
               setHeaders: { Authorization: `Bearer ${tokens.access}` },

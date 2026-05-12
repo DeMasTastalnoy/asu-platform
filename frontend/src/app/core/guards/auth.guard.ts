@@ -1,12 +1,11 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
 
 export const authGuard: CanActivateFn = () => {
-  const auth   = inject(AuthService);
   const router = inject(Router);
+  const token  = localStorage.getItem('access_token');
 
-  if (auth.isLoggedIn()) {
+  if (token) {
     return true;
   }
   router.navigate(['/auth/login']);
@@ -14,13 +13,21 @@ export const authGuard: CanActivateFn = () => {
 };
 
 export const roleGuard = (allowedRoles: string[]): CanActivateFn => () => {
-  const auth   = inject(AuthService);
   const router = inject(Router);
-  const user   = auth.currentUser();
+  const token  = localStorage.getItem('access_token');
 
-  if (user && allowedRoles.includes(user.primary_role)) {
-    return true;
+  if (!token) {
+    router.navigate(['/auth/login']);
+    return false;
   }
+
+  // Декодируем роль из токена без библиотек
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const role = payload.primary_role ?? payload.role ?? '';
+    if (allowedRoles.includes(role)) return true;
+  } catch {}
+
   router.navigate(['/dashboard']);
   return false;
 };

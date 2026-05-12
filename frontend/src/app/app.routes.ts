@@ -25,7 +25,7 @@ export const routes: Routes = [
       },
       {
         path: 'simulator',
-        canActivate: [roleGuard(['admin', 'instructor'])],
+        canActivate: [authGuard],
         loadChildren: () =>
           import('./features/simulator/simulator.routes').then(m => m.SIMULATOR_ROUTES),
       },

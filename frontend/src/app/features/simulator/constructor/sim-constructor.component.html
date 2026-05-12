@@ -1,0 +1,87 @@
+<div class="constructor">
+
+  <!-- Топбар -->
+  <div class="topbar">
+    <a routerLink="/courses" class="back-btn">← Курсы</a>
+    <input class="sim-title" [(ngModel)]="simName" placeholder="Название симуляции"/>
+    <div class="topbar-right">
+      <span class="saved-msg" *ngIf="saved">✓ Сохранено</span>
+      <button class="btn-save" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Сохранение...' : 'Сохранить' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="workspace">
+
+    <!-- Библиотека элементов -->
+    <div class="library">
+      <div class="lib-title">Элементы АСУ</div>
+
+      <div class="category-tabs">
+        <button *ngFor="let cat of libraryCategories"
+                class="cat-tab"
+                [class.active]="activeCategory === cat"
+                (click)="activeCategory = cat">
+          {{ getCategoryLabel(cat) }}
+        </button>
+      </div>
+
+      <div class="lib-grid">
+        <div class="lib-item"
+             *ngFor="let el of getFilteredElements()"
+             draggable="true"
+             (dragstart)="onDragStart($event, el)"
+             [title]="el.name">
+          <span class="lib-icon">{{ el.icon }}</span>
+          <span class="lib-name">{{ el.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Холст Konva -->
+    <div class="canvas-wrap">
+      <div class="canvas-label">Перетащите элементы из библиотеки на холст</div>
+      <div #konvaContainer class="konva-stage"
+           [style.width.px]="CANVAS_W"
+           [style.height.px]="CANVAS_H">
+      </div>
+    </div>
+
+    <!-- Панель свойств -->
+    <div class="properties">
+      <div class="props-title">Свойства</div>
+
+      <div class="no-selection" *ngIf="!selectedElement">
+        Выберите элемент на холсте
+      </div>
+
+      <div class="props-form" *ngIf="selectedElement">
+        <div class="prop-group">
+          <label>Тип</label>
+          <div class="prop-value">{{ selectedElement.type }}</div>
+        </div>
+        <div class="prop-group">
+          <label>Переменная</label>
+          <input type="text"
+                 [value]="selectedElement.variable"
+                 (change)="updateVariable($any($event.target).value)"
+                 placeholder="имя_переменной"/>
+        </div>
+        <div class="prop-group">
+          <label>Подпись</label>
+          <input type="text"
+                 [value]="selectedElement.label"
+                 (change)="updateLabel($any($event.target).value)"
+                 placeholder="Метка элемента"/>
+        </div>
+        <div class="prop-group">
+          <label>Позиция X / Y</label>
+          <div class="prop-value">{{ selectedElement.x }} / {{ selectedElement.y }}</div>
+        </div>
+        <button class="btn-delete" (click)="deleteSelected()">🗑 Удалить элемент</button>
+      </div>
+    </div>
+
+  </div>
+</div>

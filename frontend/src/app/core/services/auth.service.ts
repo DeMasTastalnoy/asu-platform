@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { ApiService } from './api.service';
@@ -6,10 +6,13 @@ import { User, AuthTokens, LoginRequest, RegisterRequest } from '../models/user.
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private router = inject(Router);
+  private api    = inject(ApiService);
+
   currentUser = signal<User | null>(null);
   isLoggedIn  = signal<boolean>(false);
 
-  constructor(private api: ApiService, private router: Router) {
+  constructor() {
     this.loadFromStorage();
   }
 
@@ -43,7 +46,11 @@ export class AuthService {
   loadCurrentUser(): void {
     this.api.get<User>('users/me/').subscribe({
       next: user => this.currentUser.set(user),
-      error: ()  => this.logout(),
+      error: ()  => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        this.isLoggedIn.set(false);
+      },
     });
   }
 

@@ -1,0 +1,66 @@
+<div class="player">
+  <div class="topbar">
+    <a routerLink="/courses" class="back-btn">← Назад</a>
+    <span class="sim-name">{{ template?.name ?? 'Загрузка...' }}</span>
+    <div class="topbar-right">
+      <span class="timer" *ngIf="started">⏱ {{ elapsedStr }}</span>
+      <span class="badge-done" *ngIf="finished">✓ Завершено</span>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка симуляции...</div>
+
+    <ng-container *ngIf="!loading && template">
+      <!-- Панель управления -->
+      <div class="control-bar">
+        <div class="status-info">
+          <span class="step-count">Действий: {{ actionLog.length }}</span>
+        </div>
+        <div class="control-btns">
+          <button class="btn-start" *ngIf="!started && !finished" (click)="startSimulation()">
+            ▶ Начать симуляцию
+          </button>
+          <button class="btn-finish" *ngIf="started && !finished" (click)="finishSimulation()">
+            ■ Завершить
+          </button>
+          <span class="submitting" *ngIf="submitting">Сохранение результата...</span>
+        </div>
+      </div>
+
+      <!-- Холст -->
+      <div class="canvas-wrap">
+        <div #konvaContainer class="konva-stage"
+             [style.width.px]="template.canvas_w ?? 1100"
+             [style.height.px]="template.canvas_h ?? 580"
+             [class.active]="started">
+        </div>
+      </div>
+
+      <!-- Лог действий -->
+      <div class="action-log" *ngIf="actionLog.length > 0">
+        <div class="log-title">Лог действий</div>
+        <div class="log-list">
+          <div class="log-item" *ngFor="let action of actionLog; let i = index">
+            <span class="log-num">{{ i + 1 }}</span>
+            <span class="log-var">{{ action.element_id }}</span>
+            <span class="log-val" [class.on]="action.value" [class.off]="!action.value">
+              {{ action.value ? 'ВКЛ' : 'ВЫКЛ' }}
+            </span>
+            <span class="log-time">{{ action.ts | date:'HH:mm:ss' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Результат -->
+      <div class="result-card" *ngIf="finished && !submitting">
+        <div class="result-title">Симуляция завершена</div>
+        <div class="result-stats">
+          <div class="stat"><div class="stat-val">{{ actionLog.length }}</div><div class="stat-lbl">Действий</div></div>
+          <div class="stat"><div class="stat-val">{{ elapsedStr }}</div><div class="stat-lbl">Время</div></div>
+        </div>
+        <a routerLink="/courses" class="btn-back-courses">← К курсам</a>
+      </div>
+    </ng-container>
+  </div>
+</div>

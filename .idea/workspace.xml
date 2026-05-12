@@ -4,17 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлены аутенфикация, дашбоард, список курсов. Сайдбар вынесен в отдельный компонент">
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-create/course-create.component.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-create/course-create.component.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-create/course-create.component.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" afterDir="false" />
+    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлено создание курса, просмотр курса, создание модулей, изменение в jwt.interceptor.ts, убирающее цикличность вызова auth">
+      <change afterPath="$PROJECT_DIR$/backend/api/permissions.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/api/serializers.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.scss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/player/sim-player.component.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/player/sim-player.component.scss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/player/sim-player.component.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/apps/courses/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/apps/courses/serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/apps/simulations/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/apps/simulations/admin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/app.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/app.routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/core/guards/auth.guard.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/core/guards/auth.guard.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/app/core/interceptors/jwt.interceptor.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/core/interceptors/jwt.interceptor.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/courses.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/courses.routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/core/services/auth.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/core/services/auth.service.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/simulator/simulator.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/simulator.routes.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,12 +87,21 @@
       <option name="project" value="LOCAL" />
       <updated>1773658524598</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Добавлено создание курса, просмотр курса, создание модулей, изменение в jwt.interceptor.ts, убирающее цикличность вызова auth">
+      <option name="closed" value="true" />
+      <created>1773659640221</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1773659640221</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Инициализация проекта" />
     <MESSAGE value="Добавлены аутенфикация, дашбоард, список курсов. Сайдбар вынесен в отдельный компонент" />
-    <option name="LAST_COMMIT_MESSAGE" value="Добавлены аутенфикация, дашбоард, список курсов. Сайдбар вынесен в отдельный компонент" />
+    <MESSAGE value="Добавлено создание курса, просмотр курса, создание модулей, изменение в jwt.interceptor.ts, убирающее цикличность вызова auth" />
+    <option name="LAST_COMMIT_MESSAGE" value="Добавлено создание курса, просмотр курса, создание модулей, изменение в jwt.interceptor.ts, убирающее цикличность вызова auth" />
   </component>
 </project>
