@@ -4,12 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Сделали страницу аналитики,токен JWT имеет роль">
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/admin/users/admin-users.component.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/admin/users/admin-users.component.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/admin/users/admin-users.component.ts" afterDir="false" />
+    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Сделана страница админа">
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/profile/profile.component.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/profile/profile.component.scss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/profile/profile.component.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/profile/profile.routes.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/admin/admin.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/admin/admin.routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/app.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/app.routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/shared/components/layout/layout.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/shared/components/layout/layout.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/shared/components/layout/layout.component.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/shared/components/layout/layout.component.scss" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -117,7 +120,15 @@
       <option name="project" value="LOCAL" />
       <updated>1778681180629</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Сделана страница админа">
+      <option name="closed" value="true" />
+      <created>1778705258838</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1778705258838</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -128,6 +139,7 @@
     <MESSAGE value=" Убрана логикв refresh для авторизации, в sim-player метод buildNode — добавлена защита от маленьких размеров элементов" />
     <MESSAGE value="Добавлена прокрутка страницы при проходении и простмотре симуляции, добавлено тестирование" />
     <MESSAGE value="Сделали страницу аналитики,токен JWT имеет роль" />
-    <option name="LAST_COMMIT_MESSAGE" value="Сделали страницу аналитики,токен JWT имеет роль" />
+    <MESSAGE value="Сделана страница админа" />
+    <option name="LAST_COMMIT_MESSAGE" value="Сделана страница админа" />
   </component>
 </project>

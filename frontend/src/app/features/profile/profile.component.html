@@ -1,0 +1,85 @@
+<div class="page">
+  <div class="topbar">
+    <span class="page-title">Профиль</span>
+  </div>
+
+  <div class="content">
+    <div class="profile-grid">
+
+      <!-- Карточка пользователя -->
+      <div class="profile-card">
+        <div class="avatar-large">{{ getInitials() }}</div>
+        <div class="profile-name">{{ user()?.full_name || user()?.username }}</div>
+        <div class="profile-role">{{ getRoleLabel() }}</div>
+        <div class="profile-email">{{ user()?.email }}</div>
+        <div class="profile-meta">
+          <div class="meta-item">
+            <span class="meta-label">Логин</span>
+            <span class="meta-value">@{{ user()?.username }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Последний вход</span>
+            <span class="meta-value">
+              {{ user()?.last_login_at ? (user()?.last_login_at | date:'dd.MM.yyyy HH:mm') : '—' }}
+            </span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Дата регистрации</span>
+            <span class="meta-value">
+              {{ user()?.created_at ? (user()?.created_at | date:'dd.MM.yyyy') : '—' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="forms-col">
+
+        <!-- Редактирование профиля -->
+        <div class="form-card">
+          <div class="form-title">Личные данные</div>
+          <form [formGroup]="form" (ngSubmit)="saveProfile()">
+            <div class="field">
+              <label>ФИО</label>
+              <input type="text" formControlName="full_name" placeholder="Фамилия Имя Отчество"/>
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" formControlName="email" placeholder="email@example.com"/>
+            </div>
+            <div class="error-msg" *ngIf="error">{{ error }}</div>
+            <div class="form-footer">
+              <span class="saved-msg" *ngIf="saved">✓ Сохранено</span>
+              <button type="submit" class="btn-primary" [disabled]="saving || form.invalid">
+                {{ saving ? 'Сохранение...' : 'Сохранить изменения' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Смена пароля -->
+        <div class="form-card">
+          <div class="form-title">Смена пароля</div>
+          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+            <div class="field">
+              <label>Текущий пароль</label>
+              <input type="password" formControlName="old_password" placeholder="Введите текущий пароль"/>
+            </div>
+            <div class="field">
+              <label>Новый пароль</label>
+              <input type="password" formControlName="new_password" placeholder="Минимум 8 символов"/>
+            </div>
+            <div class="error-msg" *ngIf="errorPassword">{{ errorPassword }}</div>
+            <div class="form-footer">
+              <span class="saved-msg" *ngIf="savedPassword">✓ Пароль изменён</span>
+              <button type="submit" class="btn-primary"
+                      [disabled]="savingPassword || passwordForm.invalid">
+                {{ savingPassword ? 'Сохранение...' : 'Изменить пароль' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
