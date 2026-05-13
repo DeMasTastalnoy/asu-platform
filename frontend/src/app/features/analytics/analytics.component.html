@@ -1,0 +1,140 @@
+<div class="page">
+  <div class="topbar">
+    <span class="page-title">Аналитика и отчёты</span>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка данных...</div>
+
+    <ng-container *ngIf="!loading">
+
+      <!-- Метрики -->
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-val">{{ courses.length }}</div>
+          <div class="metric-lbl">Курсов</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ testResults.length }}</div>
+          <div class="metric-lbl">Попыток тестов</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ simResults.length }}</div>
+          <div class="metric-lbl">Прохождений симуляций</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ avgTestScore }}</div>
+          <div class="metric-lbl">Ср. балл тестов</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ avgSimScore }}</div>
+          <div class="metric-lbl">Ср. балл симуляций</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+
+        <!-- Результаты тестов -->
+        <div class="card">
+          <div class="card-title">Результаты тестов</div>
+          <div class="empty-data" *ngIf="testResults.length === 0">
+            Результатов пока нет
+          </div>
+          <table class="data-table" *ngIf="testResults.length > 0">
+            <thead>
+              <tr>
+                <th>Модуль</th>
+                <th>Попытка</th>
+                <th>Балл</th>
+                <th>Время</th>
+                <th>Дата</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of testResults">
+                <td>{{ r.module_title ?? 'Модуль ' + r.module }}</td>
+                <td>{{ r.attempt_num }}</td>
+                <td>
+                  <span class="score-badge"
+                        [class]="getScoreBadgeClass(r.score, r.max_score)">
+                    {{ formatScore(r.score, r.max_score) }}
+                  </span>
+                </td>
+                <td>{{ r.time_spent_sec ? (r.time_spent_sec + ' сек') : '—' }}</td>
+                <td>{{ r.completed_at | date:'dd.MM.yy HH:mm' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Результаты симуляций -->
+        <div class="card">
+          <div class="card-title">Результаты симуляций</div>
+          <div class="empty-data" *ngIf="simResults.length === 0">
+            Результатов пока нет
+          </div>
+          <table class="data-table" *ngIf="simResults.length > 0">
+            <thead>
+              <tr>
+                <th>Симуляция</th>
+                <th>Попытка</th>
+                <th>Действий</th>
+                <th>Балл</th>
+                <th>Время</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let r of simResults">
+                <td>{{ r.simulation_name ?? 'Симуляция ' + r.simulation }}</td>
+                <td>{{ r.attempt_num }}</td>
+                <td>{{ r.actions_log?.length ?? 0 }}</td>
+                <td>
+                  <span *ngIf="r.score !== null && r.max_score > 0"
+                        class="score-badge"
+                        [class]="getScoreBadgeClass(r.score, r.max_score)">
+                    {{ formatScore(r.score, r.max_score) }}
+                  </span>
+                  <span *ngIf="r.score === null || r.max_score === 0" class="score-badge badge-gray">—</span>
+                </td>
+                <td>{{ r.time_spent_sec ? (r.time_spent_sec + ' сек') : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Список курсов -->
+      <div class="card">
+        <div class="card-title">Курсы</div>
+        <div class="empty-data" *ngIf="courses.length === 0">Курсов пока нет</div>
+        <table class="data-table" *ngIf="courses.length > 0">
+          <thead>
+            <tr>
+              <th>Название</th>
+              <th>Уровень</th>
+              <th>Модулей</th>
+              <th>Статус</th>
+              <th>Дата создания</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of courses">
+              <td>{{ c.title }}</td>
+              <td>{{ c.level }}</td>
+              <td>{{ c.modules_count }}</td>
+              <td>
+                <span class="score-badge"
+                      [class]="c.status === 'published' ? 'badge-green' : 'badge-gray'">
+                  {{ c.status === 'published' ? 'Опубликован' : 'Черновик' }}
+                </span>
+              </td>
+              <td>{{ c.created_at | date:'dd.MM.yy' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </ng-container>
+  </div>
+</div>

@@ -20,14 +20,15 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
 
 
+from .serializers import CustomTokenObtainPairSerializer
+
 class LoginView(TokenObtainPairView):
-    """POST /api/auth/login/ — получение JWT токенов."""
+    serializer_class   = CustomTokenObtainPairSerializer
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         if response.status_code == 200:
-            # обновляем last_login_at
             try:
                 user = User.objects.get(username=request.data.get("username"))
                 user.last_login_at = timezone.now()

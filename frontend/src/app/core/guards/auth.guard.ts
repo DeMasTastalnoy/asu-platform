@@ -21,13 +21,14 @@ export const roleGuard = (allowedRoles: string[]): CanActivateFn => () => {
     return false;
   }
 
-  // Декодируем роль из токена без библиотек
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     const role = payload.primary_role ?? payload.role ?? '';
     if (allowedRoles.includes(role)) return true;
-  } catch {}
+} catch {}
 
   router.navigate(['/dashboard']);
   return false;
 };
+
+
