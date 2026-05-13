@@ -1,0 +1,135 @@
+<div class="test-player">
+
+  <!-- Топбар -->
+  <div class="topbar">
+    <a routerLink="/courses" class="back-btn">← Назад</a>
+    <span class="test-title">Тестирование</span>
+    <div class="topbar-right">
+      <span class="timer">⏱ {{ elapsedStr }}</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Загрузка -->
+    <div class="loading" *ngIf="loading">Загрузка теста...</div>
+    <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+    <!-- Нет вопросов -->
+    <div class="empty" *ngIf="!loading && !error && questions.length === 0">
+      <p>В этом тесте пока нет вопросов.</p>
+      <a routerLink="/courses" class="btn-primary">← К курсам</a>
+    </div>
+
+    <!-- Прохождение теста -->
+    <ng-container *ngIf="!loading && !finished && questions.length > 0">
+
+      <!-- Прогресс -->
+      <div class="progress-bar-wrap">
+        <div class="progress-info">
+          <span>Вопрос {{ currentIndex + 1 }} из {{ questions.length }}</span>
+          <span>Отвечено: {{ answeredCount }} / {{ questions.length }}</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progress"></div>
+        </div>
+      </div>
+
+      <!-- Навигация по вопросам -->
+      <div class="question-nav">
+        <button *ngFor="let q of questions; let i = index"
+                class="nav-btn"
+                [class.current]="i === currentIndex"
+                [class.answered]="answers[q.id] !== undefined"
+                (click)="goTo(i)">
+          {{ i + 1 }}
+        </button>
+      </div>
+
+      <!-- Вопрос -->
+      <div class="question-card" *ngIf="currentQuestion">
+        <div class="question-type">
+          {{ currentQuestion.type === 'single' ? 'Одиночный выбор' :
+             currentQuestion.type === 'multiple' ? 'Множественный выбор' : 'Вопрос' }}
+          · {{ currentQuestion.points }} {{ currentQuestion.points === 1 ? 'балл' : 'балла' }}
+        </div>
+        <div class="question-text">{{ currentQuestion.question }}</div>
+
+        <!-- Варианты ответа -->
+        <div class="options">
+          <div class="option"
+               *ngFor="let opt of currentQuestion.options"
+               [class.selected]="isSelected(opt.id)"
+               (click)="selectOption(opt.id)">
+            <div class="option-marker">
+              <div class="marker-inner" *ngIf="isSelected(opt.id)"></div>
+            </div>
+            <span>{{ opt.text }}</span>
+          </div>
+        </div>
+
+        <!-- Навигация вопроса -->
+        <div class="question-actions">
+          <button class="btn-outline" (click)="prev()" [disabled]="currentIndex === 0">← Назад</button>
+          <button class="btn-primary" (click)="next()"
+                  *ngIf="currentIndex < questions.length - 1">
+            Далее →
+          </button>
+          <button class="btn-submit" (click)="submit()"
+                  *ngIf="currentIndex === questions.length - 1"
+                  [disabled]="submitting">
+            {{ submitting ? 'Отправка...' : 'Завершить тест' }}
+          </button>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- Результат -->
+    <div class="result-card" *ngIf="finished && result">
+      <div class="result-icon"
+           [class.pass]="scorePercent >= 60"
+           [class.fail]="scorePercent < 60">
+        {{ scorePercent >= 60 ? '✓' : '✗' }}
+      </div>
+      <div class="result-title">
+        {{ scorePercent >= 60 ? 'Тест пройден!' : 'Тест не пройден' }}
+      </div>
+      <div class="result-score">{{ result.score }} / {{ result.max_score }}</div>
+      <div class="result-percent">{{ scorePercent }}%</div>
+
+      <div class="result-stats">
+        <div class="stat">
+          <div class="stat-val">{{ questions.length }}</div>
+          <div class="stat-lbl">Вопросов</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">{{ answeredCount }}</div>
+          <div class="stat-lbl">Отвечено</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">{{ elapsedStr }}</div>
+          <div class="stat-lbl">Время</div>
+        </div>
+      </div>
+
+      <!-- Разбор ответов -->
+      <div class="answers-review">
+        <div class="review-title">Разбор ответов</div>
+        <div class="review-item"
+             *ngFor="let item of result.answers; let i = index"
+             [class.correct]="item.is_correct"
+             [class.wrong]="!item.is_correct">
+          <span class="review-num">{{ i + 1 }}</span>
+          <span class="review-status">{{ item.is_correct ? '✓' : '✗' }}</span>
+          <span class="review-text">{{ questions[i]?.question }}</span>
+        </div>
+      </div>
+
+      <a routerLink="/courses" class="btn-primary" style="margin-top: 16px; display: inline-block;">
+        ← К курсам
+      </a>
+    </div>
+
+  </div>
+</div>

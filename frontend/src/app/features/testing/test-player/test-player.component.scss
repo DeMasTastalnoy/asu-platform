@@ -1,0 +1,124 @@
+.test-player { display: flex; flex-direction: column; height: 100%; background: #f0f4f8; }
+
+.topbar {
+  height: 52px; background: #fff; border-bottom: 1px solid #e8e8e8;
+  display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0;
+}
+.back-btn { font-size: 13px; color: #185FA5; text-decoration: none; &:hover { text-decoration: underline; } }
+.test-title { font-size: 15px; font-weight: 500; color: #222; flex: 1; }
+.topbar-right { display: flex; align-items: center; }
+.timer { font-size: 14px; font-weight: 500; color: #185FA5; font-variant-numeric: tabular-nums; }
+
+.content { flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+.loading { color: #999; font-size: 14px; }
+.error-msg { background: #FCEBEB; color: #A32D2D; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.empty { text-align: center; padding: 40px; color: #999; p { margin-bottom: 16px; } }
+
+// ── Progress ─────────────────────────────────────────────────────────────────
+.progress-bar-wrap {
+  background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 12px 16px;
+}
+.progress-info {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: #666; margin-bottom: 8px;
+}
+.progress-bar {
+  height: 6px; background: #e8e8e8; border-radius: 3px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: #185FA5; border-radius: 3px; transition: width 0.3s;
+}
+
+// ── Question nav ──────────────────────────────────────────────────────────────
+.question-nav {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.nav-btn {
+  width: 34px; height: 34px; border-radius: 6px; border: 1px solid #ddd;
+  background: #fff; font-size: 12px; font-weight: 500; color: #666; cursor: pointer;
+  &:hover   { border-color: #185FA5; color: #185FA5; }
+  &.current  { background: #185FA5; border-color: #185FA5; color: #fff; }
+  &.answered { background: #EAF3DE; border-color: #3B6D11; color: #3B6D11; }
+  &.current.answered { background: #185FA5; border-color: #185FA5; color: #fff; }
+}
+
+// ── Question card ─────────────────────────────────────────────────────────────
+.question-card {
+  background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 24px;
+}
+.question-type { font-size: 11px; font-weight: 600; color: #bbb; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.question-text { font-size: 16px; color: #222; font-weight: 500; margin-bottom: 20px; line-height: 1.5; }
+
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border: 1px solid #e8e8e8; border-radius: 8px;
+  cursor: pointer; transition: all 0.15s; font-size: 14px; color: #333;
+  &:hover   { border-color: #185FA5; background: #f5f9ff; }
+  &.selected { border-color: #185FA5; background: #EBF4FF; color: #185FA5; font-weight: 500; }
+}
+.option-marker {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ddd;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  .option.selected & { border-color: #185FA5; }
+}
+.marker-inner { width: 8px; height: 8px; border-radius: 50%; background: #185FA5; }
+
+.question-actions {
+  display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+.btn-primary {
+  padding: 10px 20px; background: #185FA5; color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 500;
+  cursor: pointer; text-decoration: none;
+  &:hover { background: #0C447C; }
+}
+.btn-outline {
+  padding: 10px 20px; background: transparent; color: #185FA5;
+  border: 1px solid #185FA5; border-radius: 8px; font-size: 14px; font-weight: 500;
+  cursor: pointer;
+  &:hover { background: #EBF4FF; }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+.btn-submit {
+  padding: 10px 24px; background: #3B6D11; color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;
+  &:hover:not(:disabled) { background: #2d5209; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+// ── Result ────────────────────────────────────────────────────────────────────
+.result-card {
+  background: #fff; border-radius: 10px; border: 1px solid #e8e8e8;
+  padding: 32px; text-align: center; max-width: 600px; margin: 0 auto;
+}
+.result-icon {
+  width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700;
+  &.pass { background: #EAF3DE; color: #3B6D11; }
+  &.fail { background: #FCEBEB; color: #A32D2D; }
+}
+.result-title { font-size: 20px; font-weight: 600; color: #222; margin-bottom: 8px; }
+.result-score { font-size: 32px; font-weight: 700; color: #185FA5; }
+.result-percent { font-size: 16px; color: #888; margin-bottom: 24px; }
+
+.result-stats {
+  display: flex; justify-content: center; gap: 40px; margin-bottom: 24px;
+  padding: 16px 0; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0;
+}
+.stat { .stat-val { font-size: 22px; font-weight: 600; color: #222; } .stat-lbl { font-size: 12px; color: #999; margin-top: 4px; } }
+
+.answers-review { text-align: left; }
+.review-title { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.review-item {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px;
+  border-radius: 6px; margin-bottom: 6px; font-size: 13px;
+  &.correct { background: #EAF3DE; }
+  &.wrong   { background: #FCEBEB; }
+}
+.review-num    { color: #999; font-size: 11px; flex-shrink: 0; padding-top: 2px; }
+.review-status { font-weight: 700; flex-shrink: 0; }
+.review-text   { color: #444; flex: 1; }
