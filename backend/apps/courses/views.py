@@ -97,20 +97,19 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def complete(self, request, pk=None):
         """POST /api/modules/{id}/complete/ — студент завершил модуль."""
-        module     = self.get_object()
+        module = self.get_object()
         enrollment = Enrollment.objects.filter(
             course=module.course, student=request.user, status="active"
         ).first()
+
         if not enrollment:
-            return Response(
-                {"detail": "Вы не записаны на этот курс."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            return Response({"detail": "Модуль просмотрен.", "progress": "completed"})
+
         progress, _ = ModuleProgress.objects.get_or_create(
             enrollment=enrollment, module=module,
         )
         if progress.status != ModuleProgress.Status.COMPLETED:
-            progress.status       = ModuleProgress.Status.COMPLETED
+            progress.status = ModuleProgress.Status.COMPLETED
             progress.completed_at = timezone.now()
             if not progress.started_at:
                 progress.started_at = timezone.now()

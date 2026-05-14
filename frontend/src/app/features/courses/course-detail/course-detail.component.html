@@ -55,8 +55,8 @@
                  getProgressStatus(module) === 'in_progress' ? '→ В процессе' : '○ Не начат' }}
             </div>
             <div class="module-actions">
-              <button class="btn-sm">Открыть</button>
-            </div>
+  <button class="btn-sm" (click)="openModule(module)">Открыть</button>
+</div>
           </div>
         </div>
       </div>

@@ -4,15 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Сделана страница админа">
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/profile/profile.component.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/profile/profile.component.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/profile/profile.component.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/profile/profile.routes.ts" afterDir="false" />
+    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлен профиль и кнопка ссылки на профиль">
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.scss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/app.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/app.routes.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/shared/components/layout/layout.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/shared/components/layout/layout.component.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/shared/components/layout/layout.component.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/shared/components/layout/layout.component.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/courses.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/courses.routes.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -128,7 +127,15 @@
       <option name="project" value="LOCAL" />
       <updated>1778705258838</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Добавлен профиль и кнопка ссылки на профиль">
+      <option name="closed" value="true" />
+      <created>1778709812076</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1778709812076</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -140,6 +147,7 @@
     <MESSAGE value="Добавлена прокрутка страницы при проходении и простмотре симуляции, добавлено тестирование" />
     <MESSAGE value="Сделали страницу аналитики,токен JWT имеет роль" />
     <MESSAGE value="Сделана страница админа" />
-    <option name="LAST_COMMIT_MESSAGE" value="Сделана страница админа" />
+    <MESSAGE value="Добавлен профиль и кнопка ссылки на профиль" />
+    <option name="LAST_COMMIT_MESSAGE" value="Добавлен профиль и кнопка ссылки на профиль" />
   </component>
 </project>

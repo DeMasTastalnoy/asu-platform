@@ -1,0 +1,48 @@
+.page { display: flex; flex-direction: column; height: 100%; background: #f0f4f8; }
+
+.topbar {
+  height: 52px; background: #fff; border-bottom: 1px solid #e8e8e8;
+  display: flex; align-items: center; gap: 12px; padding: 0 24px; flex-shrink: 0;
+}
+.back-btn { font-size: 13px; color: #185FA5; text-decoration: none; &:hover { text-decoration: underline; } }
+.page-title { font-size: 15px; font-weight: 500; color: #222; flex: 1; }
+.type-badge {
+  background: #E6F1FB; color: #185FA5; padding: 3px 10px;
+  border-radius: 10px; font-size: 12px; font-weight: 500;
+}
+
+.content { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.loading { color: #999; font-size: 14px; }
+
+.video-wrap {
+  border-radius: 10px; overflow: hidden; background: #000;
+  iframe { width: 100%; height: 480px; display: block; }
+}
+
+.doc-link { padding: 20px 0; }
+
+.lecture-content {
+  background: #fff; border-radius: 10px; border: 1px solid #e8e8e8;
+  padding: 32px; font-size: 15px; line-height: 1.8; color: #333;
+  max-width: 800px;
+}
+
+.empty-content {
+  background: #fff; border-radius: 10px; border: 1px solid #e8e8e8;
+  padding: 40px; text-align: center; color: #bbb; font-size: 14px;
+}
+
+.module-footer { padding: 8px 0; }
+
+.btn-complete {
+  padding: 10px 24px; background: #3B6D11; color: #fff;
+  border: none; border-radius: 8px; font-size: 14px;
+  font-weight: 500; cursor: pointer;
+  &:hover { background: #2d5209; }
+}
+
+.btn-primary {
+  display: inline-block; padding: 10px 20px; background: #185FA5; color: #fff;
+  border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500;
+  &:hover { background: #0C447C; }
+}

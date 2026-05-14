@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute } from '@angular/router';
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -19,9 +19,10 @@ export class CourseDetailComponent implements OnInit {
   user:   any;
 
   constructor(
-    private api:   ApiService,
-    private auth:  AuthService,
-    private route: ActivatedRoute,
+    private api:    ApiService,
+    private auth:   AuthService,
+    private route:  ActivatedRoute,
+    private router: Router,
   ) {
     this.user = this.auth.currentUser;
   }
@@ -59,5 +60,33 @@ export class CourseDetailComponent implements OnInit {
 
   getProgressStatus(module: any): string {
     return module.progress?.status ?? 'not_started';
+  }
+
+  openModule(module: any): void {
+    switch (module.type) {
+      case 'test':
+        this.router.navigate(['/testing', module.id]);
+        break;
+      case 'simulation':
+        this.api.get<any>(`simulations/templates/?module_id=${module.id}`).subscribe({
+          next: data => {
+            const list = Array.isArray(data) ? data : data.results ?? [];
+            if (list.length > 0) {
+              this.router.navigate(['/simulator', list[0].id, 'play']);
+            } else {
+              this.router.navigate(['/simulator'], { queryParams: { module: module.id } });
+            }
+          },
+          error: () => this.router.navigate(['/simulator']),
+        });
+        break;
+      case 'lecture':
+      case 'video':
+      case 'document':
+        this.router.navigate(['/courses', this.course.id, 'modules', module.id]);
+        break;
+      default:
+        break;
+    }
   }
 }

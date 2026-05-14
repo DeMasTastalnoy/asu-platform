@@ -1,0 +1,43 @@
+<div class="page">
+  <div class="topbar">
+    <a [routerLink]="['/courses', courseId]" class="back-btn">← Назад к курсу</a>
+    <span class="page-title">{{ module?.title ?? 'Загрузка...' }}</span>
+    <span class="type-badge" *ngIf="module">{{ getTypeLabel(module.type) }}</span>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка...</div>
+
+    <ng-container *ngIf="module && !loading">
+
+      <!-- Видео -->
+      <div class="video-wrap" *ngIf="module.type === 'video' && module.file_url">
+        <iframe [src]="module.file_url" frameborder="0" allowfullscreen></iframe>
+      </div>
+
+      <!-- Документ / ссылка -->
+      <div class="doc-link" *ngIf="module.type === 'document' && module.file_url">
+        <a [href]="module.file_url" target="_blank" class="btn-primary">
+          📄 Открыть документ
+        </a>
+      </div>
+
+      <!-- Лекция — HTML/текст контент -->
+      <div class="lecture-content" *ngIf="module.content"
+           [innerHTML]="module.content">
+      </div>
+
+      <div class="empty-content"
+           *ngIf="!module.content && !module.file_url">
+        Содержимое модуля ещё не добавлено.
+      </div>
+
+      <div class="module-footer">
+        <button class="btn-complete" (click)="complete()">
+          ✓ Отметить как завершённый
+        </button>
+      </div>
+
+    </ng-container>
+  </div>
+</div>
