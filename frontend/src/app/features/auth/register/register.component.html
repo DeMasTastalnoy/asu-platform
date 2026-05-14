@@ -1,0 +1,43 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>АСУ-Платформа</h1>
+      <p>Регистрация нового пользователя</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label>Логин</label>
+        <input type="text" formControlName="username" placeholder="Введите логин"/>
+      </div>
+      <div class="field">
+        <label>ФИО</label>
+        <input type="text" formControlName="full_name" placeholder="Фамилия Имя Отчество"/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" formControlName="email" placeholder="email@example.com"/>
+      </div>
+      <div class="field">
+        <label>Пароль</label>
+        <input type="password" formControlName="password" placeholder="Минимум 8 символов"/>
+        <span class="hint-error"
+              *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+          Минимум 8 символов
+        </span>
+      </div>
+      <div class="field">
+        <label>Подтверждение пароля</label>
+        <input type="password" formControlName="password2" placeholder="Повторите пароль"/>
+      </div>
+      <div class="error-msg" *ngIf="error">{{ error }}</div>
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Регистрация...' : 'Зарегистрироваться' }}
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <a routerLink="/auth/login">← Войти</a>
+    </div>
+  </div>
+</div>

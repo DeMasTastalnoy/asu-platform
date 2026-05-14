@@ -4,14 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлен профиль и кнопка ссылки на профиль">
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.ts" afterDir="false" />
+    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлена функция для отметки курса завершённым">
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/auth/register/register.component.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/auth/register/register.component.scss" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/auth/register/register.component.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/courses.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/courses.routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/auth/auth.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/auth/auth.routes.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -135,7 +133,15 @@
       <option name="project" value="LOCAL" />
       <updated>1778709812076</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Добавлена функция для отметки курса завершённым">
+      <option name="closed" value="true" />
+      <created>1778759107011</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1778759107011</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -148,6 +154,7 @@
     <MESSAGE value="Сделали страницу аналитики,токен JWT имеет роль" />
     <MESSAGE value="Сделана страница админа" />
     <MESSAGE value="Добавлен профиль и кнопка ссылки на профиль" />
-    <option name="LAST_COMMIT_MESSAGE" value="Добавлен профиль и кнопка ссылки на профиль" />
+    <MESSAGE value="Добавлена функция для отметки курса завершённым" />
+    <option name="LAST_COMMIT_MESSAGE" value="Добавлена функция для отметки курса завершённым" />
   </component>
 </project>
