@@ -140,9 +140,11 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
       time_spent_sec: this.elapsed,
     }).subscribe({
       next: res => {
-        this.result = res;
-        this.finished = true;
+        this.result    = res;
+        this.finished  = true;
         this.submitting = false;
+        // Отмечаем модуль как завершённый
+        this.api.post(`modules/${this.moduleId}/complete/`, { time_spent_sec: this.elapsed }).subscribe();
       },
       error: () => { this.submitting = false; this.error = 'Ошибка при отправке ответов.'; },
     });

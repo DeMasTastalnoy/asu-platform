@@ -28,16 +28,28 @@ export class CourseDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
+  const id = this.route.snapshot.paramMap.get('id');
+  this.loadCourse(id!);
+  }
+
+  loadCourse(id: string): void {
     this.api.get<any>(`courses/${id}/`).subscribe({
       next: data => {
         this.course  = data;
-        this.modules = data.modules ?? [];
         this.loading = false;
+        this.loadModules(id);
       },
       error: () => {
         this.error   = 'Курс не найден.';
         this.loading = false;
+      },
+    });
+  }
+
+  loadModules(courseId: string): void {
+    this.api.get<any>(`courses/${courseId}/modules/`).subscribe({
+      next: data => {
+        this.modules = Array.isArray(data) ? data : data.results ?? [];
       },
     });
   }

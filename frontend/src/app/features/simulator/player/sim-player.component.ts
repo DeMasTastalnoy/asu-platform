@@ -288,7 +288,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.submitting = true;
     const payload: any = {
       simulation_id: +this.simulationId,
-      actions_log: this.actionLog,
+      actions_log:   this.actionLog,
       time_spent_sec: this.elapsed,
     };
     if (this.enrollmentId) payload.enrollment_id = +this.enrollmentId;
@@ -296,6 +296,10 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.api.post<any>('simulations/submit/', payload).subscribe({
       next: (res) => {
         this.submitting = false;
+        // Если есть moduleId — отмечаем модуль завершённым
+        if (this.template?.module) {
+          this.api.post(`modules/${this.template.module}/complete/`, { time_spent_sec: this.elapsed }).subscribe();
+        }
       },
       error: () => { this.submitting = false; },
     });

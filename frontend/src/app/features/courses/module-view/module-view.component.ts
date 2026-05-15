@@ -47,13 +47,8 @@ export class ModuleViewComponent implements OnInit {
 
   complete(): void {
   this.api.post(`modules/${this.module.id}/complete/`, { time_spent_sec: 60 }).subscribe({
-    next: () => {
-      this.router.navigate(['/courses', this.courseId]);
-    },
-    error: (err) => {
-      // Если нет зачисления — просто возвращаемся на курс
-      this.router.navigate(['/courses', this.courseId]);
-    },
+    next: () => this.router.navigate(['/courses', this.courseId]),
+    error: () => this.router.navigate(['/courses', this.courseId]),
   });
 }
 

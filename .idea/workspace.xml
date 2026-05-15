@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлена функция для отметки курса завершённым">
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/auth/register/register.component.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/auth/register/register.component.scss" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/app/features/auth/register/register.component.ts" afterDir="false" />
+    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлена функция регистрации">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/auth/auth.routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/auth/auth.routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -141,7 +139,15 @@
       <option name="project" value="LOCAL" />
       <updated>1778759107011</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Добавлена функция регистрации">
+      <option name="closed" value="true" />
+      <created>1778761167384</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1778761167384</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -155,6 +161,7 @@
     <MESSAGE value="Сделана страница админа" />
     <MESSAGE value="Добавлен профиль и кнопка ссылки на профиль" />
     <MESSAGE value="Добавлена функция для отметки курса завершённым" />
-    <option name="LAST_COMMIT_MESSAGE" value="Добавлена функция для отметки курса завершённым" />
+    <MESSAGE value="Добавлена функция регистрации" />
+    <option name="LAST_COMMIT_MESSAGE" value="Добавлена функция регистрации" />
   </component>
 </project>
