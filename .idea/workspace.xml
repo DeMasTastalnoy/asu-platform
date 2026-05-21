@@ -4,10 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлена функция регистрации">
+    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Обновлено появление отметки начато в листе модулей">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/api/permissions.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/api/serializers.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/apps/simulations/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/apps/simulations/admin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/apps/simulations/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/apps/simulations/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/course-detail/course-detail.component.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/courses/module-view/module-view.component.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -147,7 +153,15 @@
       <option name="project" value="LOCAL" />
       <updated>1778761167384</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Обновлено появление отметки начато в листе модулей">
+      <option name="closed" value="true" />
+      <created>1778889204970</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1778889204970</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -162,6 +176,7 @@
     <MESSAGE value="Добавлен профиль и кнопка ссылки на профиль" />
     <MESSAGE value="Добавлена функция для отметки курса завершённым" />
     <MESSAGE value="Добавлена функция регистрации" />
-    <option name="LAST_COMMIT_MESSAGE" value="Добавлена функция регистрации" />
+    <MESSAGE value="Обновлено появление отметки начато в листе модулей" />
+    <option name="LAST_COMMIT_MESSAGE" value="Обновлено появление отметки начато в листе модулей" />
   </component>
 </project>

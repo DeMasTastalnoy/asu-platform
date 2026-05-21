@@ -28,8 +28,8 @@ export class CourseDetailComponent implements OnInit {
   }
 
   ngOnInit(): void {
-  const id = this.route.snapshot.paramMap.get('id');
-  this.loadCourse(id!);
+    const id = this.route.snapshot.paramMap.get('id');
+    this.loadCourse(id!);
   }
 
   loadCourse(id: string): void {
@@ -80,18 +80,29 @@ export class CourseDetailComponent implements OnInit {
         this.router.navigate(['/testing', module.id]);
         break;
       case 'simulation':
-        this.api.get<any>(`simulations/templates/?module_id=${module.id}`).subscribe({
-          next: data => {
-            const list = Array.isArray(data) ? data : data.results ?? [];
-            if (list.length > 0) {
-              this.router.navigate(['/simulator', list[0].id, 'play']);
-            } else {
-              this.router.navigate(['/simulator'], { queryParams: { module: module.id } });
-            }
-          },
-          error: () => this.router.navigate(['/simulator']),
-        });
-        break;
+  console.log('openModule simulation, module.id:', module.id);
+  this.api.get<any>(`simulations/templates/?module_id=${module.id}`).subscribe({
+    next: data => {
+      console.log('templates response:', data);
+      const list = Array.isArray(data) ? data : data.results ?? [];
+      console.log('list:', list);
+      if (list.length > 0) {
+        const role = this.user()?.primary_role;
+        console.log('role:', role);
+        if (role === 'student') {
+          console.log('navigating to play:', list[0].id);
+          this.router.navigate(['/simulator', list[0].id, 'play']);
+        } else {
+          this.router.navigate(['/simulator', list[0].id, 'edit']);
+        }
+      } else {
+        console.log('no template, opening constructor');
+        this.router.navigate(['/simulator'], { queryParams: { module: module.id } });
+      }
+    },
+    error: (e) => { console.log('error:', e); this.router.navigate(['/simulator']); },
+  });
+  break;
       case 'lecture':
       case 'video':
       case 'document':

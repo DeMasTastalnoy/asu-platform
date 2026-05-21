@@ -9,6 +9,12 @@
       <button class="btn-save" (click)="save()" [disabled]="saving">
         {{ saving ? 'Сохранение...' : 'Сохранить' }}
       </button>
+      <button class="btn-publish"
+        (click)="publish()"
+        [disabled]="!templateId"
+        [title]="!templateId ? 'Сначала сохраните симуляцию' : 'Опубликовать симуляцию'">
+  Опубликовать
+</button>
     </div>
   </div>
 

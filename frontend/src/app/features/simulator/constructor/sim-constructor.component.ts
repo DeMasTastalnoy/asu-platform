@@ -388,20 +388,24 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   // ── Serialization & save ────────────────────────────────────────────────────
 
   getCanvasElements(): CanvasElement[] {
-    return this.layer.getChildren()
-      .filter(n => !(n instanceof Konva.Transformer))
-      .map((n: any) => ({
+  return this.layer.getChildren()
+    .filter(n => !(n instanceof Konva.Transformer))
+    .map((n: any) => {
+      const rect = n.getClientRect({ skipTransform: false });
+      return {
         id:       n.getAttr('elementId') ?? n.id(),
         type:     n.getAttr('elementType') ?? 'unknown',
         x:        Math.round(n.x()),
         y:        Math.round(n.y()),
-        width:    n.width(),
-        height:   n.height(),
+        width:    Math.round(rect.width),
+        height:   Math.round(rect.height),
         variable: n.getAttr('variable') ?? '',
         label:    n.getAttr('label') ?? '',
         props:    n.getAttr('canvasProps') ?? {},
-      }));
-  }
+        libId:    n.getAttr('libId') ?? '',
+      };
+    });
+}
 
   save(): void {
     this.saving = true;
@@ -432,14 +436,51 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     });
   }
 
+ publish(): void {
+  if (!this.templateId) return;
+  this.api.post(`simulations/templates/${this.templateId}/publish/`, {}).subscribe({
+    next: () => {
+      alert('Симуляция опубликована');
+    },
+  });
+}
+
   loadTemplate(): void {
-    this.api.get<any>(`simulations/templates/${this.templateId}/`).subscribe({
-      next: (tmpl) => {
-        this.simName = tmpl.name;
-        this.simDescription = tmpl.description ?? '';
-        // Restore elements — simplified: recreate from saved data
-        // Full restore would use Konva JSON; for now just show metadata
-      },
-    });
-  }
+  this.api.get<any>(`simulations/templates/${this.templateId}/`).subscribe({
+    next: (tmpl) => {
+      this.simName        = tmpl.name;
+      this.simDescription = tmpl.description ?? '';
+      // Сохраняем moduleId из шаблона если он не задан через URL
+      if (!this.moduleId && tmpl.module) {
+        this.moduleId = String(tmpl.module);
+      }
+      setTimeout(() => {
+        const elements = tmpl.elements ?? [];
+        elements.forEach((el: any) => {
+          const libEl = this.libraryElements.find(e => e.id === el.libId) ?? {
+            id: el.libId ?? el.id,
+            name: el.label ?? el.type,
+            category: 'controls',
+            type: el.type,
+            icon: '?',
+            default_properties: el.props ?? {},
+          };
+          this.addElementToCanvas(libEl, el.x, el.y);
+          const node = this.layer.findOne(`#${el.id}`);
+          if (node) {
+            node.setAttrs({
+              elementId: el.id,
+              variable:  el.variable,
+              label:     el.label,
+              canvasProps: el.props,
+            });
+            node.x(el.x);
+            node.y(el.y);
+          }
+        });
+        this.layer.draw();
+      }, 200);
+    },
+  });
+}
 }

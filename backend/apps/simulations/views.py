@@ -42,10 +42,17 @@ class SimulationTemplateViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.primary_role == "student":
-            return SimulationTemplate.objects.filter(status="published")
-        if user.primary_role == "instructor":
-            return SimulationTemplate.objects.filter(author=user)
-        return SimulationTemplate.objects.all()
+            qs = SimulationTemplate.objects.filter(status="published").order_by('-created_at')
+        elif user.primary_role == "instructor":
+            qs = SimulationTemplate.objects.filter(author=user).order_by('-created_at')
+        else:
+            qs = SimulationTemplate.objects.all().order_by('-created_at')
+
+        module_id = self.request.query_params.get('module_id')
+        if module_id:
+            qs = qs.filter(module_id=module_id)
+
+        return qs
 
     @action(detail=True, methods=["post"], permission_classes=[IsInstructor])
     def publish(self, request, pk=None):

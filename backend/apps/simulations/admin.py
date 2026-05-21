@@ -13,9 +13,10 @@ class ElementLibraryAdmin(admin.ModelAdmin):
 class SimulationTemplateAdmin(admin.ModelAdmin):
     list_display  = ("id", "name", "author", "module", "status", "created_at")
     list_filter   = ("status",)
-    search_fields = ("name", "author__full_name")
+    search_fields = ("name",)
     raw_id_fields = ("author", "module")
     readonly_fields = ("created_at", "updated_at")
+    fields = ("name", "description", "module", "author", "status", "elements", "rules", "reference_scenario", "canvas_w", "canvas_h")
 
 
 @admin.register(SimulationResult)
