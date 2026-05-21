@@ -6,6 +6,13 @@ from apps.courses.models import CourseModule, Enrollment
 class ElementLibrary(models.Model):
     """Библиотека типовых элементов АСУ для конструктора симуляций."""
 
+    LIBRARY_SETS = [
+        ('universal',    'Универсальная'),
+        ('boiler',       'Котельная установка'),
+        ('pump_station', 'Насосная станция'),
+        ('substation',   'Электроподстанция'),
+    ]
+
     id                 = models.CharField(primary_key=True, max_length=50)
     name               = models.CharField("Название", max_length=100)
     category           = models.CharField(
@@ -13,19 +20,22 @@ class ElementLibrary(models.Model):
         help_text="controls | indicators | pipes | valves | sensors",
     )
     type               = models.CharField("Тип элемента", max_length=50)
+    library_set        = models.CharField(
+        "Библиотека АСУ", max_length=50,
+        choices=LIBRARY_SETS, default='universal'
+    )
     icon               = models.CharField("Иконка (SVG/URL)", max_length=500, blank=True)
-    # default_properties: {"width": 44, "height": 44, "color": "#4CAF50", ...}
     default_properties = models.JSONField("Свойства по умолчанию", default=dict)
     is_active          = models.BooleanField("Активен", default=True)
 
     class Meta:
         db_table     = "element_library"
-        ordering     = ["category", "name"]
+        ordering     = ["library_set", "category", "name"]
         verbose_name = "Элемент библиотеки"
         verbose_name_plural = "Библиотека элементов"
 
     def __str__(self):
-        return f"[{self.category}] {self.name}"
+        return f"[{self.library_set}] {self.name}"
 
 
 class SimulationTemplate(models.Model):
