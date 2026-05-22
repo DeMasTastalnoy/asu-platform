@@ -42,9 +42,16 @@
 
 .canvas-wrap { display: flex; justify-content: center; }
 .konva-stage {
-  background: #0B1E2D; border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-  &.active { box-shadow: 0 4px 20px rgba(24,95,165,0.4), 0 0 0 2px #185FA5; }
+  background: #B5B8B1; border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  &.active { box-shadow: 0 4px 20px rgba(24,95,165,0.25), 0 0 0 2px #185FA5; }
+}
+
+.btn-fit {
+  padding: 6px 14px; background: #f0f0f0; color: #444;
+  border: 1px solid #d0d0d0; border-radius: 7px; font-size: 13px;
+  cursor: pointer; white-space: nowrap;
+  &:hover { background: #e2e2e2; }
 }
 
 .action-log {

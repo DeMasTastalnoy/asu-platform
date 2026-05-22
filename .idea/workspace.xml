@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Обновлен конструктор симуляций, теперь имеются библиотеки для различных АСУ" />
+    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Обновлен плеер и конструктор, добавлено редактирование и управление холстом для плеера" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -175,7 +175,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779445828727</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="Обновлен плеер и конструктор, добавлено редактирование и управление холстом для плеера">
+      <option name="closed" value="true" />
+      <created>1779446968439</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1779446968439</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -194,6 +202,7 @@
     <MESSAGE value="Добавлена привязка к курсу для симуляций, добавлено восстановление размеров элементов симуляций, добавлена кнопка для публикации симуляций в конструкторе" />
     <MESSAGE value="Добавлены разделения на библиотеки элементов АСУ, проведены миграции" />
     <MESSAGE value="Обновлен конструктор симуляций, теперь имеются библиотеки для различных АСУ" />
-    <option name="LAST_COMMIT_MESSAGE" value="Обновлен конструктор симуляций, теперь имеются библиотеки для различных АСУ" />
+    <MESSAGE value="Обновлен плеер и конструктор, добавлено редактирование и управление холстом для плеера" />
+    <option name="LAST_COMMIT_MESSAGE" value="Обновлен плеер и конструктор, добавлено редактирование и управление холстом для плеера" />
   </component>
 </project>

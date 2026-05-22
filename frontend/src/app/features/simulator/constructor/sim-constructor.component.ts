@@ -136,6 +136,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       container: this.konvaContainer.nativeElement,
       width: this.CANVAS_W,
       height: this.CANVAS_H,
+      draggable: true,
     });
 
     this.layer = new Konva.Layer();
@@ -171,6 +172,61 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     const container = this.konvaContainer.nativeElement;
     container.addEventListener('dragover', (e: DragEvent) => e.preventDefault());
     container.addEventListener('drop', (e: DragEvent) => this.onDrop(e));
+
+    this.initNavigation();
+  }
+
+  // ── Навигация по холсту ──────────────────────────────────────────────────────
+
+  private readonly ZOOM_FACTOR = 1.05;
+  private readonly ZOOM_MIN    = 0.2;
+  private readonly ZOOM_MAX    = 3;
+
+  initNavigation(): void {
+    this.stage.on('wheel', (e: Konva.KonvaEventObject<WheelEvent>) => {
+      e.evt.preventDefault();
+
+      const oldScale = this.stage.scaleX();
+      const pointer  = this.stage.getPointerPosition()!;
+
+      const origin = {
+        x: (pointer.x - this.stage.x()) / oldScale,
+        y: (pointer.y - this.stage.y()) / oldScale,
+      };
+
+      const direction = e.evt.deltaY < 0 ? 1 : -1;
+      const newScale  = Math.min(
+        this.ZOOM_MAX,
+        Math.max(this.ZOOM_MIN, direction > 0
+          ? oldScale * this.ZOOM_FACTOR
+          : oldScale / this.ZOOM_FACTOR,
+        ),
+      );
+
+      this.stage.scale({ x: newScale, y: newScale });
+      this.stage.position({
+        x: pointer.x - origin.x * newScale,
+        y: pointer.y - origin.y * newScale,
+      });
+    });
+  }
+
+  fitToScreen(): void {
+    const wrapper = this.konvaContainer.nativeElement.parentElement as HTMLElement;
+    const vw = wrapper.clientWidth;
+    const vh = wrapper.clientHeight;
+
+    if (vw > 0 && vh > 0) {
+      const scale = Math.max(this.ZOOM_MIN, Math.min(this.ZOOM_MAX, Math.min(vw / this.CANVAS_W, vh / this.CANVAS_H)));
+      this.stage.scale({ x: scale, y: scale });
+      this.stage.position({
+        x: Math.max(0, (vw - this.CANVAS_W * scale) / 2),
+        y: Math.max(0, (vh - this.CANVAS_H * scale) / 2),
+      });
+    } else {
+      this.stage.scale({ x: 1, y: 1 });
+      this.stage.position({ x: 0, y: 0 });
+    }
   }
 
   drawGrid(layer: Konva.Layer): void {
@@ -228,9 +284,13 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     const libEl = this.libraryElements.find(el => el.id === id);
     if (!libEl) return;
 
-    const rect = this.konvaContainer.nativeElement.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const rect  = this.konvaContainer.nativeElement.getBoundingClientRect();
+    const scale = this.stage.scaleX();
+    const pos   = this.stage.position();
+
+    // Перевод экранных координат в логические координаты холста
+    const x = (e.clientX - rect.left - pos.x) / scale;
+    const y = (e.clientY - rect.top  - pos.y) / scale;
 
     this.addElementToCanvas(libEl, x, y);
   }

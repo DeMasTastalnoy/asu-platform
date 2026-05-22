@@ -90,12 +90,6 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.layer = new Konva.Layer();
     this.stage.add(this.layer);
 
-    // Grid
-    const gridLayer = new Konva.Layer();
-    this.drawGrid(gridLayer, this.template.canvas_w ?? 1100, this.template.canvas_h ?? 580);
-    this.stage.add(gridLayer);
-    gridLayer.moveToBottom();
-
     // Восстанавливаем элементы из JSON
     this.restoreElements(this.template.elements ?? []);
     this.layer.draw();
@@ -160,15 +154,6 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  drawGrid(layer: Konva.Layer, w: number, h: number): void {
-    const step = 20;
-    for (let x = 0; x <= w; x += step) {
-      layer.add(new Konva.Line({ points: [x, 0, x, h], stroke: '#e8ecf0', strokeWidth: 0.5 }));
-    }
-    for (let y = 0; y <= h; y += step) {
-      layer.add(new Konva.Line({ points: [0, y, w, y], stroke: '#e8ecf0', strokeWidth: 0.5 }));
-    }
-  }
 
   restoreElements(elements: any[]): void {
     elements.forEach(el => {
@@ -196,14 +181,14 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         const g = new Konva.Group({ x, y });
         const r = Math.min(w, h) / 2;
         g.add(new Konva.Circle({ x: r, y: r, radius: r - 2, fill: p.offColor ?? '#555', stroke: p.color ?? '#4CAF50', strokeWidth: 3, name: 'body' }));
-        g.add(new Konva.Text({ x: 0, y: r * 2 + 4, width: w, text: el.label, fontSize: 10, fill: '#aaa', align: 'center' }));
+        g.add(new Konva.Text({ x: 0, y: r * 2 + 4, width: w, text: el.label, fontSize: 10, fill: '#ffffff', align: 'center' }));
         return g;
       }
       case 'lamp': {
         const g = new Konva.Group({ x, y });
         const r = Math.min(w, h) / 2;
         g.add(new Konva.Circle({ x: r, y: r, radius: r - 2, fill: p.offColor ?? '#333', stroke: p.color ?? '#4CAF50', strokeWidth: 2, name: 'body' }));
-        g.add(new Konva.Text({ x: 0, y: r * 2 + 4, width: w, text: el.label, fontSize: 10, fill: '#aaa', align: 'center' }));
+        g.add(new Konva.Text({ x: 0, y: r * 2 + 4, width: w, text: el.label, fontSize: 10, fill: '#ffffff', align: 'center' }));
         return g;
       }
       case 'pipe':
@@ -213,7 +198,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         g.add(new Konva.Circle({ x: w/2, y: h/2, radius: w/2-2, fill: '#1A2A3A', stroke: '#4FC3F7', strokeWidth: 2 }));
         g.add(new Konva.Text({ x: 0, y: h/2-10, width: w, text: '0.0', fontSize: 16, fill: '#4FC3F7', align: 'center', fontStyle: 'bold', name: 'value' }));
         g.add(new Konva.Text({ x: 0, y: h/2+8, width: w, text: p.unit ?? '', fontSize: 10, fill: '#607D8B', align: 'center' }));
-        g.add(new Konva.Text({ x: 0, y: h+4, width: w, text: el.label, fontSize: 10, fill: '#aaa', align: 'center' }));
+        g.add(new Konva.Text({ x: 0, y: h+4, width: w, text: el.label, fontSize: 10, fill: '#ffffff', align: 'center' }));
         return g;
       }
       case 'display': {
@@ -227,7 +212,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         g.add(new Konva.Rect({ width: w, height: h-16, fill: '#1A2A3A', stroke: '#607D8B', strokeWidth: 1, cornerRadius: 4 }));
         g.add(new Konva.Text({ x: 0, y: 8, width: w, text: '0.0', fontSize: 16, fill: '#4FC3F7', align: 'center', fontStyle: 'bold', name: 'value' }));
         g.add(new Konva.Text({ x: 0, y: 28, width: w, text: p.unit ?? '', fontSize: 11, fill: '#607D8B', align: 'center' }));
-        g.add(new Konva.Text({ x: 0, y: h-14, width: w, text: el.label, fontSize: 10, fill: '#aaa', align: 'center' }));
+        g.add(new Konva.Text({ x: 0, y: h-14, width: w, text: el.label, fontSize: 10, fill: '#ffffff', align: 'center' }));
         return g;
       }
       case 'valve': {
@@ -236,7 +221,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         g.add(new Konva.Circle({ x: cx, y: cy, radius: r, fill: 'transparent', stroke: p.color ?? '#FF9800', strokeWidth: 2 }));
         g.add(new Konva.Line({ points: [cx-r, cy, cx+r, cy], stroke: p.color ?? '#FF9800', strokeWidth: 2 }));
         g.add(new Konva.Line({ points: [cx, cy-r, cx, cy+r], stroke: p.color ?? '#FF9800', strokeWidth: 2 }));
-        g.add(new Konva.Text({ x: 0, y: h+2, width: w, text: el.label, fontSize: 10, fill: '#aaa', align: 'center' }));
+        g.add(new Konva.Text({ x: 0, y: h+2, width: w, text: el.label, fontSize: 10, fill: '#ffffff', align: 'center' }));
         return g;
       }
       case 'pump': {
@@ -244,11 +229,11 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         const r = Math.min(w,h)/2-2;
         g.add(new Konva.Circle({ x: w/2, y: h/2, radius: r, fill: '#1A2A3A', stroke: p.color ?? '#9C27B0', strokeWidth: 2 }));
         g.add(new Konva.RegularPolygon({ x: w/2, y: h/2, sides: 3, radius: r-6, fill: p.color ?? '#9C27B0', rotation: 90 }));
-        g.add(new Konva.Text({ x: 0, y: h+2, width: w, text: el.label, fontSize: 10, fill: '#aaa', align: 'center' }));
+        g.add(new Konva.Text({ x: 0, y: h+2, width: w, text: el.label, fontSize: 10, fill: '#ffffff', align: 'center' }));
         return g;
       }
       case 'label':
-        return new Konva.Text({ x, y, text: p.text ?? el.label, fontSize: p.fontSize ?? 14, fill: p.color ?? '#607D8B' });
+        return new Konva.Text({ x, y, text: p.text ?? el.label, fontSize: p.fontSize ?? 14, fill: p.color ?? '#1a1a1a' });
       default: {
         const g = new Konva.Group({ x, y });
         g.add(new Konva.Rect({ width: w, height: h, fill: '#1A2A3A', stroke: '#607D8B', strokeWidth: 1, cornerRadius: 4 }));

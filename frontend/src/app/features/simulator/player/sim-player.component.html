@@ -45,8 +45,12 @@
         </div>
       </div>
 
-      <!-- Лог действий -->
-      <div class="action-log" *ngIf="actionLog.length > 0">
+      <!-- Лог действий: инструктор/админ видят всегда, студент — только после завершения -->
+      <div class="action-log"
+           *ngIf="actionLog.length > 0 &&
+                  (user()?.primary_role === 'instructor' ||
+                   user()?.primary_role === 'admin' ||
+                   finished)">
         <div class="log-title">Лог действий</div>
         <div class="log-list">
           <div class="log-item" *ngFor="let action of actionLog; let i = index">
