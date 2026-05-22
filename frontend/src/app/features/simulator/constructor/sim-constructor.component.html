@@ -24,6 +24,12 @@
     <div class="library">
       <div class="lib-title">Элементы АСУ</div>
 
+      <div class="lib-set-selector">
+        <select [(ngModel)]="activeLibrarySet" (ngModelChange)="onLibrarySetChange($event)">
+          <option *ngFor="let s of LIBRARY_SETS" [value]="s.value">{{ s.label }}</option>
+        </select>
+      </div>
+
       <div class="category-tabs">
         <button *ngFor="let cat of libraryCategories"
                 class="cat-tab"

@@ -5,7 +5,7 @@ from .models import ElementLibrary, SimulationTemplate, SimulationResult
 class ElementLibrarySerializer(serializers.ModelSerializer):
     class Meta:
         model  = ElementLibrary
-        fields = ("id", "name", "category", "type", "icon", "default_properties")
+        fields = ("id", "name", "category", "type", "library_set", "icon", "default_properties")
 
 
 class SimulationTemplateSerializer(serializers.ModelSerializer):
@@ -16,7 +16,7 @@ class SimulationTemplateSerializer(serializers.ModelSerializer):
         fields = (
             "id", "module", "name", "description", "author_name",
             "canvas_w", "canvas_h", "elements", "rules",
-            "reference_scenario", "status", "created_at", "updated_at",
+            "reference_scenario", "status", "library_set", "created_at", "updated_at",
         )
         read_only_fields = ("id", "author_name", "created_at", "updated_at")
 

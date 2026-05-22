@@ -46,6 +46,49 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   libraryElements: LibraryElement[] = [];
   libraryCategories: string[] = [];
   activeCategory = 'controls';
+  activeLibrarySet = 'boiler';
+
+  readonly LIBRARY_SETS = [
+//     { value: 'universal',    label: 'Универсальная' },
+    { value: 'boiler',       label: 'Котельная' },
+    { value: 'pump_station', label: 'Насосная станция' },
+    { value: 'substation',   label: 'Электроподстанция' },
+  ];
+
+//   private readonly FALLBACK_LIBRARY: LibraryElement[] = [
+//     { id: 'btn-start', name: 'Кнопка ПУСК', category: 'controls', type: 'button',
+//       icon: '▶', default_properties: { color: '#4CAF50', offColor: '#555', width: 60, height: 60, shape: 'circle' } },
+//     { id: 'btn-stop', name: 'Кнопка СТОП', category: 'controls', type: 'button',
+//       icon: '■', default_properties: { color: '#F44336', offColor: '#555', width: 60, height: 60, shape: 'circle' } },
+//     { id: 'switch', name: 'Переключатель', category: 'controls', type: 'switch',
+//       icon: '⬛', default_properties: { color: '#2196F3', width: 80, height: 36 } },
+//     { id: 'input-num', name: 'Ввод числа', category: 'controls', type: 'input',
+//       icon: '🔢', default_properties: { width: 100, height: 36, min: 0, max: 100 } },
+//     { id: 'lamp-green', name: 'Лампа зелёная', category: 'indicators', type: 'lamp',
+//       icon: '💡', default_properties: { color: '#4CAF50', offColor: '#333', width: 30, height: 30 } },
+//     { id: 'lamp-red', name: 'Лампа красная', category: 'indicators', type: 'lamp',
+//       icon: '🔴', default_properties: { color: '#F44336', offColor: '#333', width: 30, height: 30 } },
+//     { id: 'gauge', name: 'Манометр', category: 'indicators', type: 'gauge',
+//       icon: '📊', default_properties: { min: 0, max: 10, unit: 'бар', width: 80, height: 80 } },
+//     { id: 'display', name: 'Дисплей', category: 'indicators', type: 'display',
+//       icon: '🖥', default_properties: { width: 120, height: 50, fontSize: 18 } },
+//     { id: 'pipe-h', name: 'Труба гор.', category: 'pipes', type: 'pipe',
+//       icon: '━', default_properties: { width: 120, height: 12, color: '#1E88E5', direction: 'horizontal' } },
+//     { id: 'pipe-v', name: 'Труба верт.', category: 'pipes', type: 'pipe',
+//       icon: '┃', default_properties: { width: 12, height: 120, color: '#1E88E5', direction: 'vertical' } },
+//     { id: 'pipe-corner', name: 'Отвод', category: 'pipes', type: 'pipe-corner',
+//       icon: '┘', default_properties: { width: 40, height: 40, color: '#1E88E5' } },
+//     { id: 'valve', name: 'Задвижка', category: 'valves', type: 'valve',
+//       icon: '⊠', default_properties: { color: '#FF9800', width: 40, height: 40 } },
+//     { id: 'pump', name: 'Насос', category: 'valves', type: 'pump',
+//       icon: '⊙', default_properties: { color: '#9C27B0', width: 60, height: 60 } },
+//     { id: 'sensor-temp', name: 'Датчик темп.', category: 'sensors', type: 'sensor',
+//       icon: '🌡', default_properties: { unit: '°C', min: -50, max: 150, width: 60, height: 70 } },
+//     { id: 'sensor-press', name: 'Датчик давл.', category: 'sensors', type: 'sensor',
+//       icon: '⊕', default_properties: { unit: 'бар', min: 0, max: 16, width: 60, height: 70 } },
+//     { id: 'label', name: 'Подпись', category: 'sensors', type: 'label',
+//       icon: 'T', default_properties: { text: 'Метка', fontSize: 14, color: '#607D8B', width: 100, height: 30 } },
+//   ];
   selectedNode: Konva.Node | null = null;
   selectedElement: CanvasElement | null = null;
 
@@ -143,47 +186,24 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   // ── Library ─────────────────────────────────────────────────────────────────
 
   loadLibrary(): void {
-    // Встроенная библиотека элементов АСУ (без обращения к серверу на старте)
-    this.libraryElements = [
-      // controls
-      { id: 'btn-start', name: 'Кнопка ПУСК', category: 'controls', type: 'button',
-        icon: '▶', default_properties: { color: '#4CAF50', offColor: '#555', width: 60, height: 60, shape: 'circle' } },
-      { id: 'btn-stop', name: 'Кнопка СТОП', category: 'controls', type: 'button',
-        icon: '■', default_properties: { color: '#F44336', offColor: '#555', width: 60, height: 60, shape: 'circle' } },
-      { id: 'switch', name: 'Переключатель', category: 'controls', type: 'switch',
-        icon: '⬛', default_properties: { color: '#2196F3', width: 80, height: 36 } },
-      { id: 'input-num', name: 'Ввод числа', category: 'controls', type: 'input',
-        icon: '🔢', default_properties: { width: 100, height: 36, min: 0, max: 100 } },
-      // indicators
-      { id: 'lamp-green', name: 'Лампа зелёная', category: 'indicators', type: 'lamp',
-        icon: '💡', default_properties: { color: '#4CAF50', offColor: '#333', width: 30, height: 30 } },
-      { id: 'lamp-red', name: 'Лампа красная', category: 'indicators', type: 'lamp',
-        icon: '🔴', default_properties: { color: '#F44336', offColor: '#333', width: 30, height: 30 } },
-      { id: 'gauge', name: 'Манометр', category: 'indicators', type: 'gauge',
-        icon: '📊', default_properties: { min: 0, max: 10, unit: 'бар', width: 80, height: 80 } },
-      { id: 'display', name: 'Дисплей', category: 'indicators', type: 'display',
-        icon: '🖥', default_properties: { width: 120, height: 50, fontSize: 18 } },
-      // pipes
-      { id: 'pipe-h', name: 'Труба гор.', category: 'pipes', type: 'pipe',
-        icon: '━', default_properties: { width: 120, height: 12, color: '#1E88E5', direction: 'horizontal' } },
-      { id: 'pipe-v', name: 'Труба верт.', category: 'pipes', type: 'pipe',
-        icon: '┃', default_properties: { width: 12, height: 120, color: '#1E88E5', direction: 'vertical' } },
-      { id: 'pipe-corner', name: 'Отвод', category: 'pipes', type: 'pipe-corner',
-        icon: '┘', default_properties: { width: 40, height: 40, color: '#1E88E5' } },
-      // valves
-      { id: 'valve', name: 'Задвижка', category: 'valves', type: 'valve',
-        icon: '⊠', default_properties: { color: '#FF9800', width: 40, height: 40 } },
-      { id: 'pump', name: 'Насос', category: 'valves', type: 'pump',
-        icon: '⊙', default_properties: { color: '#9C27B0', width: 60, height: 60 } },
-      // sensors
-      { id: 'sensor-temp', name: 'Датчик темп.', category: 'sensors', type: 'sensor',
-        icon: '🌡', default_properties: { unit: '°C', min: -50, max: 150, width: 60, height: 70 } },
-      { id: 'sensor-press', name: 'Датчик давл.', category: 'sensors', type: 'sensor',
-        icon: '⊕', default_properties: { unit: 'бар', min: 0, max: 16, width: 60, height: 70 } },
-      { id: 'label', name: 'Подпись', category: 'sensors', type: 'label',
-        icon: 'T', default_properties: { text: 'Метка', fontSize: 14, color: '#607D8B', width: 100, height: 30 } },
-    ];
-    this.libraryCategories = [...new Set(this.libraryElements.map(e => e.category))];
+  this.api.get<any>(`simulations/elements/?library_set=${this.activeLibrarySet}`)
+    .subscribe({
+      next: (response) => {
+        const elements = Array.isArray(response) ? response : response.results ?? [];
+        if (elements.length > 0) {
+          this.libraryElements = elements;
+          this.libraryCategories = [...new Set<string>(elements.map((e: any) => e.category as string))];
+          if (!this.libraryCategories.includes(this.activeCategory)) {
+            this.activeCategory = this.libraryCategories[0] ?? 'controls';
+          }
+        }
+      },
+    });
+}
+
+  onLibrarySetChange(set: string): void {
+    this.activeLibrarySet = set;
+    this.loadLibrary();
   }
 
   getFilteredElements(): LibraryElement[] {
@@ -418,6 +438,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       elements:    this.getCanvasElements(),
       rules:       [],
       reference_scenario: [],
+      library_set: this.activeLibrarySet,
       status:      'draft',
     };
 
@@ -450,9 +471,12 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     next: (tmpl) => {
       this.simName        = tmpl.name;
       this.simDescription = tmpl.description ?? '';
-      // Сохраняем moduleId из шаблона если он не задан через URL
       if (!this.moduleId && tmpl.module) {
         this.moduleId = String(tmpl.module);
+      }
+      if (tmpl.library_set && tmpl.library_set !== this.activeLibrarySet) {
+        this.activeLibrarySet = tmpl.library_set;
+        this.loadLibrary();
       }
       setTimeout(() => {
         const elements = tmpl.elements ?? [];

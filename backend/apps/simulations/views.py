@@ -17,12 +17,16 @@ class ElementLibraryViewSet(viewsets.ReadOnlyModelViewSet):
     """
     serializer_class   = ElementLibrarySerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
-        qs       = ElementLibrary.objects.filter(is_active=True)
-        category = self.request.query_params.get("category")
+        qs          = ElementLibrary.objects.filter(is_active=True)
+        category    = self.request.query_params.get("category")
+        library_set = self.request.query_params.get("library_set")
         if category:
             qs = qs.filter(category=category)
+        if library_set:
+            qs = qs.filter(library_set=library_set)
         return qs
 
 
