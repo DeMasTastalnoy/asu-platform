@@ -80,29 +80,23 @@ export class CourseDetailComponent implements OnInit {
         this.router.navigate(['/testing', module.id]);
         break;
       case 'simulation':
-  console.log('openModule simulation, module.id:', module.id);
-  this.api.get<any>(`simulations/templates/?module_id=${module.id}`).subscribe({
-    next: data => {
-      console.log('templates response:', data);
-      const list = Array.isArray(data) ? data : data.results ?? [];
-      console.log('list:', list);
-      if (list.length > 0) {
-        const role = this.user()?.primary_role;
-        console.log('role:', role);
-        if (role === 'student') {
-          console.log('navigating to play:', list[0].id);
-          this.router.navigate(['/simulator', list[0].id, 'play']);
-        } else {
-          this.router.navigate(['/simulator', list[0].id, 'edit']);
-        }
-      } else {
-        console.log('no template, opening constructor');
-        this.router.navigate(['/simulator'], { queryParams: { module: module.id } });
-      }
-    },
-    error: (e) => { console.log('error:', e); this.router.navigate(['/simulator']); },
-  });
-  break;
+        this.api.get<any>(`simulations/templates/?module_id=${module.id}`).subscribe({
+          next: data => {
+            const list = Array.isArray(data) ? data : data.results ?? [];
+            if (list.length > 0) {
+              // Все роли открывают плеер; кнопка редактирования — внутри плеера
+              this.router.navigate(['/simulator', list[0].id, 'play']);
+            } else {
+              // Шаблон ещё не создан — конструктор только для инструктора/админа
+              const role = this.user()?.primary_role;
+              if (role === 'instructor' || role === 'admin') {
+                this.router.navigate(['/simulator/new'], { queryParams: { module: module.id } });
+              }
+            }
+          },
+          error: () => this.router.navigate(['/dashboard']),
+        });
+        break;
       case 'lecture':
       case 'video':
       case 'document':

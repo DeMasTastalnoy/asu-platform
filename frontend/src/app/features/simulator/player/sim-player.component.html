@@ -5,6 +5,14 @@
     <div class="topbar-right">
       <span class="timer" *ngIf="started">⏱ {{ elapsedStr }}</span>
       <span class="badge-done" *ngIf="finished">✓ Завершено</span>
+      <button class="btn-fit" *ngIf="!loading && template" (click)="fitToScreen()" title="По центру">
+        ⊡ По центру
+      </button>
+      <a class="btn-edit"
+         *ngIf="user()?.primary_role === 'instructor' || user()?.primary_role === 'admin'"
+         [routerLink]="['/simulator', simulationId, 'edit']">
+        ✏ Редактировать
+      </a>
     </div>
   </div>
 

@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Добавлены разделения на библиотеки элементов АСУ, проведены миграции">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/apps/simulations/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/apps/simulations/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/apps/simulations/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/apps/simulations/serializers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/apps/simulations/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/apps/simulations/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/app/features/simulator/constructor/sim-constructor.component.ts" afterDir="false" />
-    </list>
+    <list default="true" id="2864ec36-36fb-426f-b7da-1c6f2033e4ab" name="Changes" comment="Обновлен конструктор симуляций, теперь имеются библиотеки для различных АСУ" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -174,7 +167,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779396781308</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Обновлен конструктор симуляций, теперь имеются библиотеки для различных АСУ">
+      <option name="closed" value="true" />
+      <created>1779445828727</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1779445828727</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -192,6 +193,7 @@
     <MESSAGE value="Обновлено появление отметки начато в листе модулей" />
     <MESSAGE value="Добавлена привязка к курсу для симуляций, добавлено восстановление размеров элементов симуляций, добавлена кнопка для публикации симуляций в конструкторе" />
     <MESSAGE value="Добавлены разделения на библиотеки элементов АСУ, проведены миграции" />
-    <option name="LAST_COMMIT_MESSAGE" value="Добавлены разделения на библиотеки элементов АСУ, проведены миграции" />
+    <MESSAGE value="Обновлен конструктор симуляций, теперь имеются библиотеки для различных АСУ" />
+    <option name="LAST_COMMIT_MESSAGE" value="Обновлен конструктор симуляций, теперь имеются библиотеки для различных АСУ" />
   </component>
 </project>
