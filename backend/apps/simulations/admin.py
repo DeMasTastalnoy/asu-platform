@@ -21,9 +21,13 @@ class SimulationTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(SimulationResult)
 class SimulationResultAdmin(admin.ModelAdmin):
-    list_display  = ("student", "simulation", "attempt_num", "score", "completed_at")
+    list_display  = (
+        "student", "simulation", "attempt_num", "score",
+        "completed", "errors_count", "safety_tripped", "alarm_count", "completed_at",
+    )
+    list_filter   = ("completed", "safety_tripped")
     raw_id_fields = ("simulation", "enrollment")
 
     def student(self, obj):
-        return obj.enrollment.student
+        return obj.enrollment.student if obj.enrollment else "—"
     student.short_description = "Студент"

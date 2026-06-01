@@ -36,6 +36,7 @@
           <ng-container *ngIf="started && !scenarioMode">
             <span class="step-count">Действий: {{ actionLog.length }}</span>
           </ng-container>
+          <span class="alarm-chip" *ngIf="started && hazardActive">⚠ АВАРИЯ</span>
         </div>
         <div class="control-btns">
           <button class="btn-start" *ngIf="!started && !finished" (click)="startSimulation()">
@@ -57,8 +58,11 @@
           </div>
         </div>
         <div class="step-instruction">
-          <span class="sp-prompt">Выполните действие:</span>
-          <strong class="sp-target">{{ getElementLabel(currentStep.element_id) }}</strong>
+          <div class="sp-action">
+            <span class="sp-prompt">Выполните действие:</span>
+            <strong class="sp-target">{{ getElementLabel(currentStep.element_id) }}</strong>
+          </div>
+          <div class="sp-desc" *ngIf="currentStepDescription">{{ currentStepDescription }}</div>
         </div>
       </div>
 
@@ -94,16 +98,31 @@
       </div>
 
       <!-- Результат: все шаги пройдены -->
-      <div class="result-card" *ngIf="finished && !submitting && completionStatus === 'completed'">
-        <div class="result-title">Симуляция пройдена</div>
+      <div class="result-card" [class.result-card-incomplete]="safetyTripped"
+           *ngIf="finished && !submitting && completionStatus === 'completed'">
+        <div class="result-title" [class.result-title-incomplete]="safetyTripped">
+          {{ safetyTripped ? 'Пройдено с нарушением режима' : 'Симуляция пройдена' }}
+        </div>
+
+        <div class="result-hazard" *ngIf="safetyTripped">
+          ⚠ Сработала аварийная защита (предохранительный клапан). Нарушение режима эксплуатации — давление превысило допустимое. Балл снижен.
+        </div>
 
         <div class="result-score-wrap" *ngIf="scenarioMode">
           <div class="result-score"
-               [class.score-good]="scorePercent >= 70"
-               [class.score-bad]="scorePercent < 70">
-            {{ scorePercent }}%
+               [class.score-good]="displayScorePercent >= 70"
+               [class.score-avg]="displayScorePercent >= 40 && displayScorePercent < 70"
+               [class.score-bad]="displayScorePercent < 40">
+            {{ displayScorePercent }}%
           </div>
-          <div class="result-score-sub">{{ score }} из {{ scenario.length }} правильных действий</div>
+          <div class="result-score-sub">
+            <ng-container *ngIf="safetyTripped">
+              {{ displayScore }} из {{ scenario.length }} баллов (штраф за аварию)
+            </ng-container>
+            <ng-container *ngIf="!safetyTripped">
+              {{ score }} из {{ scenario.length }} правильных действий
+            </ng-container>
+          </div>
         </div>
 
         <div class="result-stats">
@@ -124,6 +143,10 @@
         <div class="result-title result-title-incomplete">Симуляция не завершена</div>
         <div class="result-incomplete-sub">
           Выполнено шагов: {{ currentStepIdx }} из {{ scenario.length }}
+        </div>
+
+        <div class="result-hazard" *ngIf="safetyTripped">
+          ⚠ Сработала аварийная защита (предохранительный клапан). Нарушение режима эксплуатации — давление превысило допустимое.
         </div>
 
         <div class="result-stats">

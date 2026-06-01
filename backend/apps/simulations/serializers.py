@@ -37,6 +37,7 @@ class SimulationResultSerializer(serializers.ModelSerializer):
             "student_name", "attempt_num",
             "score", "max_score", "score_percent",
             "actions_log", "deviations",
+            "errors_count", "completed", "safety_tripped", "alarm_count",
             "time_spent_sec", "started_at", "completed_at",
         )
         read_only_fields = (
@@ -47,10 +48,19 @@ class SimulationResultSerializer(serializers.ModelSerializer):
 
 class SimulationSubmitSerializer(serializers.Serializer):
     """Сохранение лога действий студента и автоматическая оценка."""
+
+    # Штрафы за нарушение режима эксплуатации
+    SAFETY_TRIP_FACTOR = 0.5   # балл умножается на коэффициент при срабатывании защиты
+    ALARM_PENALTY      = 0.5   # дополнительный вычет за каждую аварию
+
     simulation_id  = serializers.IntegerField()
     enrollment_id  = serializers.IntegerField(required=False, allow_null=True)
     actions_log    = serializers.ListField(child=serializers.DictField())
     time_spent_sec = serializers.IntegerField(required=False)
+    errors_count   = serializers.IntegerField(required=False, default=0)
+    completed      = serializers.BooleanField(required=False, default=True)
+    safety_tripped = serializers.BooleanField(required=False, default=False)
+    alarm_count    = serializers.IntegerField(required=False, default=0)
 
     def validate(self, attrs):
         from apps.courses.models import Enrollment
@@ -84,7 +94,20 @@ class SimulationSubmitSerializer(serializers.Serializer):
                 simulation=sim, enrollment=enrollment
             ).count() + 1
 
-        deviations, score, max_score = self._evaluate(actions, sim.reference_scenario)
+        deviations, score, max_score = self._evaluate(actions, sim.reference_scenario, sim.elements)
+
+        # Штраф за нарушение режима эксплуатации (срабатывание аварийной защиты)
+        safety_tripped = self.validated_data.get("safety_tripped", False)
+        alarm_count    = self.validated_data.get("alarm_count", 0)
+        if safety_tripped and score is not None:
+            penalized = max(0.0, score * self.SAFETY_TRIP_FACTOR - alarm_count * self.ALARM_PENALTY)
+            deviations.append({
+                "type":        "safety",
+                "detail":      "Сработала аварийная защита — превышение давления",
+                "alarm_count": alarm_count,
+                "penalty":     round(score - penalized, 2),
+            })
+            score = round(penalized, 2)
 
         result = SimulationResult.objects.create(
             simulation=sim,
@@ -95,12 +118,32 @@ class SimulationSubmitSerializer(serializers.Serializer):
             actions_log=actions,
             deviations=deviations,
             time_spent_sec=self.validated_data.get("time_spent_sec"),
+            errors_count=self.validated_data.get("errors_count", 0),
+            completed=self.validated_data.get("completed", True),
+            safety_tripped=self.validated_data.get("safety_tripped", False),
+            alarm_count=self.validated_data.get("alarm_count", 0),
             completed_at=timezone.now(),
         )
         return result
 
-    def _evaluate(self, actions, reference):
-        """Сравнение действий студента с эталонным сценарием."""
+    # Типы элементов-органов управления — только они оцениваются в сценарии.
+    CONTROL_TYPES = {"button", "valve", "pump", "switch", "toggle"}
+
+    def _evaluate(self, actions, reference, elements=None):
+        """Сравнение действий студента с эталонным сценарием.
+
+        Шаги, нацеленные на индикаторы (манометр, уровнемер, дисплей и т.п.),
+        в оценке не участвуют — клик по ним не несёт смысловой нагрузки.
+        """
+        if not reference:
+            return [], None, None
+
+        # Тип элемента по его variable (element_id в сценарии == variable элемента)
+        type_by_var = {e.get("variable"): e.get("type") for e in (elements or [])}
+        reference = [
+            s for s in reference
+            if type_by_var.get(s.get("element_id")) in self.CONTROL_TYPES
+        ]
         if not reference:
             return [], None, None
 

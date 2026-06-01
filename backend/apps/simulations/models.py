@@ -120,6 +120,13 @@ class SimulationResult(models.Model):
     deviations  = models.JSONField("Отклонения от эталона", default=list, blank=True)
 
     time_spent_sec = models.PositiveIntegerField("Время (сек)", null=True, blank=True)
+
+    # Итог прохождения и эксплуатационная безопасность
+    errors_count   = models.PositiveSmallIntegerField("Ошибочных действий", default=0)
+    completed      = models.BooleanField("Пройдено полностью", default=True)
+    safety_tripped = models.BooleanField("Сработала аварийная защита", default=False)
+    alarm_count    = models.PositiveSmallIntegerField("Кол-во аварий", default=0)
+
     started_at  = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
