@@ -23,7 +23,19 @@
       <!-- Панель управления -->
       <div class="control-bar">
         <div class="status-info">
-          <span class="step-count">Действий: {{ actionLog.length }}</span>
+          <ng-container *ngIf="!started && !finished">
+            <span class="step-count">Готово к запуску</span>
+          </ng-container>
+          <ng-container *ngIf="started && scenarioMode">
+            <span class="step-count">
+              Шаг {{ currentStepIdx + 1 }} / {{ scenario.length }}
+            </span>
+            <span class="score-inline">✓ {{ score }}</span>
+            <span class="error-inline" *ngIf="errors > 0">✗ {{ errors }}</span>
+          </ng-container>
+          <ng-container *ngIf="started && !scenarioMode">
+            <span class="step-count">Действий: {{ actionLog.length }}</span>
+          </ng-container>
         </div>
         <div class="control-btns">
           <button class="btn-start" *ngIf="!started && !finished" (click)="startSimulation()">
@@ -33,6 +45,20 @@
             ■ Завершить
           </button>
           <span class="submitting" *ngIf="submitting">Сохранение результата...</span>
+        </div>
+      </div>
+
+      <!-- Панель текущего шага (только в сценарном режиме) -->
+      <div class="step-panel" *ngIf="started && !finished && scenarioMode && currentStep">
+        <div class="step-progress">
+          <span class="sp-label">Шаг {{ currentStepIdx + 1 }} из {{ scenario.length }}</span>
+          <div class="sp-bar">
+            <div class="sp-fill" [style.width.%]="currentStepIdx / scenario.length * 100"></div>
+          </div>
+        </div>
+        <div class="step-instruction">
+          <span class="sp-prompt">Выполните действие:</span>
+          <strong class="sp-target">{{ getElementLabel(currentStep.element_id) }}</strong>
         </div>
       </div>
 
@@ -53,22 +79,56 @@
                    finished)">
         <div class="log-title">Лог действий</div>
         <div class="log-list">
-          <div class="log-item" *ngFor="let action of actionLog; let i = index">
+          <div class="log-item" *ngFor="let action of actionLog; let i = index"
+               [class.log-item-ok]="action.ok === true"
+               [class.log-item-err]="action.ok === false">
             <span class="log-num">{{ i + 1 }}</span>
+            <span class="log-status">{{ action.ok === false ? '✗' : '✓' }}</span>
             <span class="log-var">{{ action.element_id }}</span>
             <span class="log-val" [class.on]="action.value" [class.off]="!action.value">
-              {{ action.value ? 'ВКЛ' : 'ВЫКЛ' }}
+              {{ action.action === 'wrong_click' ? 'ОШИБКА' : (action.value ? 'ВКЛ' : 'ВЫКЛ') }}
             </span>
             <span class="log-time">{{ action.ts | date:'HH:mm:ss' }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Результат -->
-      <div class="result-card" *ngIf="finished && !submitting">
-        <div class="result-title">Симуляция завершена</div>
+      <!-- Результат: все шаги пройдены -->
+      <div class="result-card" *ngIf="finished && !submitting && completionStatus === 'completed'">
+        <div class="result-title">Симуляция пройдена</div>
+
+        <div class="result-score-wrap" *ngIf="scenarioMode">
+          <div class="result-score"
+               [class.score-good]="scorePercent >= 70"
+               [class.score-bad]="scorePercent < 70">
+            {{ scorePercent }}%
+          </div>
+          <div class="result-score-sub">{{ score }} из {{ scenario.length }} правильных действий</div>
+        </div>
+
         <div class="result-stats">
-          <div class="stat"><div class="stat-val">{{ actionLog.length }}</div><div class="stat-lbl">Действий</div></div>
+          <ng-container *ngIf="scenarioMode">
+            <div class="stat"><div class="stat-val stat-ok">{{ score }}</div><div class="stat-lbl">Правильно</div></div>
+            <div class="stat"><div class="stat-val stat-err">{{ errors }}</div><div class="stat-lbl">Ошибок</div></div>
+          </ng-container>
+          <div class="stat" *ngIf="!scenarioMode">
+            <div class="stat-val">{{ actionLog.length }}</div><div class="stat-lbl">Действий</div>
+          </div>
+          <div class="stat"><div class="stat-val">{{ elapsedStr }}</div><div class="stat-lbl">Время</div></div>
+        </div>
+        <a routerLink="/courses" class="btn-back-courses">← К курсам</a>
+      </div>
+
+      <!-- Результат: досрочное завершение -->
+      <div class="result-card result-card-incomplete" *ngIf="finished && !submitting && completionStatus === 'incomplete'">
+        <div class="result-title result-title-incomplete">Симуляция не завершена</div>
+        <div class="result-incomplete-sub">
+          Выполнено шагов: {{ currentStepIdx }} из {{ scenario.length }}
+        </div>
+
+        <div class="result-stats">
+          <div class="stat"><div class="stat-val stat-ok">{{ score }}</div><div class="stat-lbl">Правильно</div></div>
+          <div class="stat"><div class="stat-val stat-err">{{ errors }}</div><div class="stat-lbl">Ошибок</div></div>
           <div class="stat"><div class="stat-val">{{ elapsedStr }}</div><div class="stat-lbl">Время</div></div>
         </div>
         <a routerLink="/courses" class="btn-back-courses">← К курсам</a>

@@ -24,8 +24,10 @@
   display: flex; align-items: center; justify-content: space-between;
   background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 10px 16px;
 }
-.status-info { font-size: 13px; color: #666; }
-.step-count { font-weight: 500; color: #185FA5; }
+.status-info { font-size: 13px; color: #666; display: flex; align-items: center; gap: 10px; }
+.step-count  { font-weight: 500; color: #185FA5; }
+.score-inline { font-weight: 600; color: #3B6D11; }
+.error-inline { font-weight: 600; color: #c0392b; }
 .control-btns { display: flex; align-items: center; gap: 10px; }
 
 .btn-start {
@@ -39,6 +41,24 @@
   &:hover { background: #c0392b; }
 }
 .submitting { font-size: 13px; color: #999; }
+
+// ── Step panel ───────────────────────────────────────────────────────────────
+
+.step-panel {
+  background: #fff; border-radius: 10px; border: 1px solid #e8e8e8;
+  padding: 12px 16px; display: flex; align-items: center; gap: 20px;
+}
+.step-progress {
+  display: flex; flex-direction: column; gap: 4px; min-width: 160px;
+}
+.sp-label { font-size: 11px; color: #999; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.sp-bar {
+  height: 4px; background: #eee; border-radius: 2px; overflow: hidden;
+  .sp-fill { height: 100%; background: #185FA5; border-radius: 2px; transition: width 0.3s; }
+}
+.step-instruction { display: flex; align-items: center; gap: 8px; flex: 1; }
+.sp-prompt { font-size: 13px; color: #888; }
+.sp-target { font-size: 15px; color: #185FA5; }
 
 .canvas-wrap { display: flex; justify-content: center; }
 .konva-stage {
@@ -64,21 +84,42 @@
   padding: 4px 0; border-bottom: 1px solid #f5f5f5;
   &:last-child { border-bottom: none; }
 }
-.log-num { width: 20px; color: #bbb; font-size: 11px; flex-shrink: 0; }
-.log-var { flex: 1; color: #4FC3F7; font-family: monospace; }
-.log-val { padding: 1px 8px; border-radius: 10px; font-weight: 500; font-size: 11px;
+.log-num    { width: 20px; color: #bbb; font-size: 11px; flex-shrink: 0; }
+.log-status { width: 16px; font-size: 11px; flex-shrink: 0; }
+.log-var    { flex: 1; color: #4FC3F7; font-family: monospace; }
+.log-val    { padding: 1px 8px; border-radius: 10px; font-weight: 500; font-size: 11px;
   &.on  { background: #EAF3DE; color: #3B6D11; }
   &.off { background: #f5f5f5; color: #888; }
 }
 .log-time { color: #bbb; font-size: 11px; white-space: nowrap; }
+.log-item-ok  { background: #f6fff2; }
+.log-item-err { background: #fff5f5; .log-status { color: #e24b4a; } }
 
 .result-card {
   background: #fff; border-radius: 10px; border: 1px solid #e8e8e8; padding: 24px;
   text-align: center;
 }
-.result-title { font-size: 18px; font-weight: 500; color: #222; margin-bottom: 20px; }
+.result-title { font-size: 18px; font-weight: 500; color: #222; margin-bottom: 16px; }
+.result-card-incomplete { border-color: #f5c6c6; background: #fff8f8; }
+.result-title-incomplete { color: #c0392b; }
+.result-incomplete-sub { font-size: 13px; color: #888; margin-bottom: 16px; }
+
+.result-score-wrap { margin-bottom: 16px; }
+.result-score {
+  font-size: 52px; font-weight: 700; line-height: 1;
+  &.score-good { color: #3B6D11; }
+  &.score-avg  { color: #c47c00; }
+  &.score-bad  { color: #c0392b; }
+}
+.result-score-sub { font-size: 13px; color: #888; margin-top: 4px; }
+
 .result-stats { display: flex; justify-content: center; gap: 40px; margin-bottom: 20px; }
-.stat { .stat-val { font-size: 28px; font-weight: 600; color: #185FA5; } .stat-lbl { font-size: 12px; color: #999; margin-top: 4px; } }
+.stat {
+  .stat-val     { font-size: 28px; font-weight: 600; color: #185FA5; }
+  .stat-val.stat-ok  { color: #3B6D11; }
+  .stat-val.stat-err { color: #c0392b; }
+  .stat-lbl { font-size: 12px; color: #999; margin-top: 4px; }
+}
 .btn-back-courses {
   display: inline-block; padding: 10px 24px; background: #185FA5; color: #fff;
   border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500;
