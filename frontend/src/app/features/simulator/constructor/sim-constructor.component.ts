@@ -27,6 +27,26 @@ interface CanvasElement {
   props: any;
 }
 
+/** Шаг эталонного сценария (он же подсказка-гид для студента в плеере). */
+interface ScenarioStep {
+  step: number;
+  element_id: string;       // == variable элемента на холсте
+  expected_value: boolean;  // целевое состояние (ВКЛ/ВЫКЛ)
+  description: string;       // пояснение «зачем» — показывается в плеере
+}
+
+/** Действие триггера: установить переменной целевое значение. */
+interface RuleAction {
+  variable: string;
+  set: boolean;
+}
+
+/** Триггер (правило): когда переменная-источник принимает значение — выполнить действия. */
+interface Rule {
+  if:   { variable: string; op: 'eq' | 'neq'; value: boolean };
+  then: RuleAction[];
+}
+
 @Component({
   selector: 'app-sim-constructor',
   standalone: true,
@@ -91,6 +111,17 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
 //   ];
   selectedNode: Konva.Node | null = null;
   selectedElement: CanvasElement | null = null;
+
+  // ── Эталонный сценарий ────────────────────────────────────────────────────────
+  /** Типы элементов-органов управления — только их можно ставить в шаги сценария. */
+  private readonly CONTROL_TYPES = ['button', 'valve', 'pump', 'switch', 'toggle'];
+  scenario: ScenarioStep[] = [];
+  /** Выбранный в выпадающем списке элемент для добавления нового шага. */
+  newStepVar = '';
+  /** Триггеры (правила) шаблона — редактируются и сохраняются. */
+  rules: Rule[] = [];
+  /** Активная вкладка правой панели логики. */
+  logicTab: 'scenario' | 'rules' = 'scenario';
 
   // Simulation meta
   simName = 'Новая симуляция';
@@ -487,6 +518,147 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     });
 }
 
+  // ── Эталонный сценарий ────────────────────────────────────────────────────────
+
+  /**
+   * Органы управления, присутствующие на холсте, — только они допустимы в шагах
+   * сценария. Индикаторы (манометр, уровнемер, дисплей) сюда не попадают.
+   */
+  controlElements(): { variable: string; label: string }[] {
+    if (!this.layer) return [];
+    return this.layer.getChildren()
+      .filter((n: any) => !(n instanceof Konva.Transformer)
+                          && this.CONTROL_TYPES.includes(n.getAttr('elementType')))
+      .map((n: any) => ({
+        variable: n.getAttr('variable') ?? '',
+        label:    n.getAttr('label') ?? n.getAttr('variable') ?? '',
+      }))
+      .filter(e => !!e.variable);
+  }
+
+  /** Подпись органа управления по его variable (для отображения шага). */
+  stepLabel(variable: string): string {
+    return this.controlElements().find(e => e.variable === variable)?.label ?? variable;
+  }
+
+  /** Существует ли ещё на холсте орган управления, на который ссылается шаг. */
+  stepIsValid(step: ScenarioStep): boolean {
+    return this.controlElements().some(e => e.variable === step.element_id);
+  }
+
+  /** Добавить шаг по выбранному в выпадающем списке элементу. */
+  addStep(): void {
+    if (!this.newStepVar) return;
+    this.scenario.push({
+      step:           this.scenario.length + 1,
+      element_id:     this.newStepVar,
+      expected_value: true,
+      description:    '',
+    });
+    this.newStepVar = '';
+  }
+
+  removeStep(i: number): void {
+    this.scenario.splice(i, 1);
+    this.renumber();
+  }
+
+  moveStep(i: number, dir: -1 | 1): void {
+    const j = i + dir;
+    if (j < 0 || j >= this.scenario.length) return;
+    [this.scenario[i], this.scenario[j]] = [this.scenario[j], this.scenario[i]];
+    this.renumber();
+  }
+
+  toggleStepValue(step: ScenarioStep): void {
+    step.expected_value = !step.expected_value;
+  }
+
+  setStepDescription(step: ScenarioStep, value: string): void {
+    step.description = value;
+  }
+
+  private renumber(): void {
+    this.scenario.forEach((s, i) => (s.step = i + 1));
+  }
+
+  /** Чистый массив шагов для сохранения (отбрасываем «битые» ссылки). */
+  private cleanScenario(): ScenarioStep[] {
+    return this.scenario
+      .filter(s => this.stepIsValid(s))
+      .map((s, i) => ({
+        step:           i + 1,
+        element_id:     s.element_id,
+        expected_value: s.expected_value,
+        description:    (s.description ?? '').trim(),
+      }));
+  }
+
+  // ── Триггеры (правила) ────────────────────────────────────────────────────────
+
+  /** Все элементы на холсте, у которых задана переменная (для источников и целей правил). */
+  allElements(): { variable: string; label: string }[] {
+    if (!this.layer) return [];
+    return this.layer.getChildren()
+      .filter((n: any) => !(n instanceof Konva.Transformer) && !!n.getAttr('variable'))
+      .map((n: any) => ({
+        variable: n.getAttr('variable'),
+        label:    n.getAttr('label') ?? n.getAttr('variable'),
+      }));
+  }
+
+  /** Подпись элемента по variable (для отображения в правиле). */
+  varLabel(variable: string): string {
+    return this.allElements().find(e => e.variable === variable)?.label ?? variable;
+  }
+
+  addRule(): void {
+    const first = this.controlElements()[0]?.variable ?? '';
+    this.rules.push({
+      if:   { variable: first, op: 'eq', value: true },
+      then: [{ variable: '', set: true }],
+    });
+  }
+
+  removeRule(i: number): void {
+    this.rules.splice(i, 1);
+  }
+
+  toggleRuleOp(rule: Rule): void {
+    rule.if.op = rule.if.op === 'eq' ? 'neq' : 'eq';
+  }
+
+  toggleRuleValue(rule: Rule): void {
+    rule.if.value = !rule.if.value;
+  }
+
+  addAction(rule: Rule): void {
+    rule.then.push({ variable: '', set: true });
+  }
+
+  removeAction(rule: Rule, j: number): void {
+    rule.then.splice(j, 1);
+  }
+
+  toggleActionSet(action: RuleAction): void {
+    action.set = !action.set;
+  }
+
+  /** Корректно ли правило: источник и хотя бы одно действие с выбранной целью. */
+  ruleIsValid(rule: Rule): boolean {
+    return !!rule.if.variable && rule.then.some(a => !!a.variable);
+  }
+
+  /** Чистый массив правил для сохранения (отбрасываем неполные). */
+  private cleanRules(): Rule[] {
+    return this.rules
+      .filter(r => this.ruleIsValid(r))
+      .map(r => ({
+        if:   { variable: r.if.variable, op: r.if.op, value: r.if.value },
+        then: r.then.filter(a => !!a.variable).map(a => ({ variable: a.variable, set: a.set })),
+      }));
+  }
+
   save(): void {
     this.saving = true;
     const payload = {
@@ -496,8 +668,8 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       canvas_w:    this.CANVAS_W,
       canvas_h:    this.CANVAS_H,
       elements:    this.getCanvasElements(),
-      rules:       [],
-      reference_scenario: [],
+      rules:       this.cleanRules(),
+      reference_scenario: this.cleanScenario(),
       library_set: this.activeLibrarySet,
       status:      'draft',
     };
@@ -531,6 +703,26 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     next: (tmpl) => {
       this.simName        = tmpl.name;
       this.simDescription = tmpl.description ?? '';
+      // Триггеры приводим к типизированному виду (с дефолтами на случай старого формата)
+      this.rules = [...(tmpl.rules ?? [])].map((r: any) => ({
+        if: {
+          variable: r?.if?.variable ?? '',
+          op:       r?.if?.op === 'neq' ? 'neq' : 'eq',
+          value:    r?.if?.value ?? true,
+        },
+        then: [...(r?.then ?? [])].map((a: any) => ({
+          variable: a?.variable ?? '',
+          set:      a?.set ?? true,
+        })),
+      }));
+      this.scenario = [...(tmpl.reference_scenario ?? [])]
+        .sort((a: any, b: any) => (a.step ?? 0) - (b.step ?? 0))
+        .map((s: any, i: number) => ({
+          step:           i + 1,
+          element_id:     s.element_id ?? '',
+          expected_value: s.expected_value ?? true,
+          description:    s.description ?? s.hint ?? '',
+        }));
       if (!this.moduleId && tmpl.module) {
         this.moduleId = String(tmpl.module);
       }

@@ -261,3 +261,268 @@
     cursor: not-allowed;
   }
 }
+
+// ── Сценарий (гид) ─────────────────────────────────────────────────────────────
+
+.scenario-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: #fff;
+  border-left: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.logic-tabs {
+  display: flex;
+  border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.logic-tab {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  background: #fafafa;
+  color: #888;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  &:hover { color: #185FA5; }
+  &.active {
+    background: #fff;
+    color: #185FA5;
+    border-bottom-color: #185FA5;
+  }
+}
+
+.scn-hint {
+  padding: 8px 14px 10px;
+  font-size: 11px;
+  color: #999;
+  line-height: 1.4;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.scn-add {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+}
+
+.scn-select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+  background: #fff;
+  &:focus { border-color: #185FA5; }
+}
+
+.scn-add-btn {
+  padding: 6px 12px;
+  background: #185FA5;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover:not(:disabled) { background: #0C447C; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.scn-empty {
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #bbb;
+  text-align: center;
+}
+
+.scn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 12px 14px;
+}
+
+.scn-step {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.scn-step-invalid {
+  border-color: #f5c6c6;
+  background: #fff8f8;
+}
+
+.scn-step-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.scn-num {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #185FA5;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scn-target {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: #222;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scn-step-ctrl {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.scn-icon {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #666;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  &:hover:not(:disabled) { background: #f0f4f8; border-color: #185FA5; }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+.scn-icon-del {
+  color: #A32D2D;
+  &:hover:not(:disabled) { background: #FCEBEB; border-color: #f5c6c6; }
+}
+
+.scn-step-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scn-val {
+  padding: 3px 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  &.scn-val-on  { background: #EAF3DE; color: #3B6D11; }
+  &.scn-val-off { background: #f0f0f0; color: #888; }
+}
+
+.scn-warn {
+  font-size: 11px;
+  color: #c0392b;
+  font-weight: 500;
+}
+
+.scn-desc {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+  &:focus { border-color: #185FA5; }
+}
+
+// ── Триггеры ───────────────────────────────────────────────────────────────────
+
+.rule-add-btn { flex: 1; }
+
+.rule-card {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.rule-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rule-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #185FA5;
+  letter-spacing: 0.06em;
+}
+
+.rule-cond {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rule-op {
+  width: 30px;
+  height: 26px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: #fff;
+  color: #185FA5;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  &:hover { background: #EBF4FF; border-color: #185FA5; }
+}
+
+.rule-then-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.rule-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rule-add-action {
+  align-self: flex-start;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px dashed #c2cdd8;
+  border-radius: 5px;
+  color: #185FA5;
+  font-size: 11px;
+  cursor: pointer;
+  &:hover { background: #EBF4FF; border-style: solid; }
+}

@@ -96,5 +96,127 @@
       </div>
     </div>
 
+    <!-- Логика: сценарий и триггеры -->
+    <div class="scenario-panel">
+      <div class="logic-tabs">
+        <button class="logic-tab" [class.active]="logicTab === 'scenario'" (click)="logicTab = 'scenario'">Сценарий</button>
+        <button class="logic-tab" [class.active]="logicTab === 'rules'" (click)="logicTab = 'rules'">Триггеры</button>
+      </div>
+
+      <!-- ВКЛАДКА: СЦЕНАРИЙ -->
+      <ng-container *ngIf="logicTab === 'scenario'">
+      <div class="scn-hint">
+        Шаги выполняются по порядку. Студент видит подсказку и описание к каждому действию.
+        В сценарий можно добавить только органы управления.
+      </div>
+
+      <!-- Добавление шага -->
+      <div class="scn-add">
+        <select [(ngModel)]="newStepVar" class="scn-select">
+          <option value="">+ Добавить шаг…</option>
+          <option *ngFor="let c of controlElements()" [value]="c.variable">{{ c.label }}</option>
+        </select>
+        <button class="scn-add-btn" (click)="addStep()" [disabled]="!newStepVar">Добавить</button>
+      </div>
+
+      <div class="scn-empty" *ngIf="scenario.length === 0">
+        Шагов пока нет — симуляция запустится в свободном режиме.
+      </div>
+
+      <!-- Список шагов -->
+      <div class="scn-list">
+        <div class="scn-step" *ngFor="let step of scenario; let i = index"
+             [class.scn-step-invalid]="!stepIsValid(step)">
+          <div class="scn-step-head">
+            <span class="scn-num">{{ i + 1 }}</span>
+            <span class="scn-target">{{ stepLabel(step.element_id) }}</span>
+            <div class="scn-step-ctrl">
+              <button class="scn-icon" (click)="moveStep(i, -1)" [disabled]="i === 0" title="Вверх">↑</button>
+              <button class="scn-icon" (click)="moveStep(i, 1)" [disabled]="i === scenario.length - 1" title="Вниз">↓</button>
+              <button class="scn-icon scn-icon-del" (click)="removeStep(i)" title="Удалить">✕</button>
+            </div>
+          </div>
+
+          <div class="scn-step-row">
+            <button class="scn-val"
+                    [class.scn-val-on]="step.expected_value"
+                    [class.scn-val-off]="!step.expected_value"
+                    (click)="toggleStepValue(step)">
+              {{ step.expected_value ? 'ВКЛ' : 'ВЫКЛ' }}
+            </button>
+            <span class="scn-warn" *ngIf="!stepIsValid(step)" title="Элемент удалён или переименован">⚠ нет элемента</span>
+          </div>
+
+          <input class="scn-desc" type="text"
+                 [value]="step.description"
+                 (input)="setStepDescription(step, $any($event.target).value)"
+                 placeholder="Описание: зачем это действие"/>
+        </div>
+      </div>
+      </ng-container>
+
+      <!-- ВКЛАДКА: ТРИГГЕРЫ -->
+      <ng-container *ngIf="logicTab === 'rules'">
+        <div class="scn-hint">
+          Когда переменная-источник принимает заданное значение, выполняются действия.
+          Например: «Задвижка топлива = ВКЛ → Лампа «Работа» = ВКЛ».
+        </div>
+
+        <div class="scn-add">
+          <button class="scn-add-btn rule-add-btn" (click)="addRule()">+ Добавить триггер</button>
+        </div>
+
+        <div class="scn-empty" *ngIf="rules.length === 0">
+          Триггеров нет — элементы меняют состояние только по кликам.
+        </div>
+
+        <div class="scn-list">
+          <div class="rule-card" *ngFor="let rule of rules; let i = index"
+               [class.scn-step-invalid]="!ruleIsValid(rule)">
+            <div class="rule-head">
+              <span class="rule-tag">ЕСЛИ</span>
+              <button class="scn-icon scn-icon-del" (click)="removeRule(i)" title="Удалить триггер">✕</button>
+            </div>
+
+            <select class="scn-select" [(ngModel)]="rule.if.variable">
+              <option value="">— источник —</option>
+              <option *ngFor="let c of controlElements()" [value]="c.variable">{{ c.label }}</option>
+            </select>
+
+            <div class="rule-cond">
+              <button class="rule-op" (click)="toggleRuleOp(rule)" title="Сменить условие">
+                {{ rule.if.op === 'eq' ? '=' : '≠' }}
+              </button>
+              <button class="scn-val"
+                      [class.scn-val-on]="rule.if.value"
+                      [class.scn-val-off]="!rule.if.value"
+                      (click)="toggleRuleValue(rule)">
+                {{ rule.if.value ? 'ВКЛ' : 'ВЫКЛ' }}
+              </button>
+            </div>
+
+            <div class="rule-then-label">ТО установить:</div>
+
+            <div class="rule-action" *ngFor="let act of rule.then; let j = index">
+              <select class="scn-select" [(ngModel)]="act.variable">
+                <option value="">— цель —</option>
+                <option *ngFor="let e of allElements()" [value]="e.variable">{{ e.label }}</option>
+              </select>
+              <button class="scn-val"
+                      [class.scn-val-on]="act.set"
+                      [class.scn-val-off]="!act.set"
+                      (click)="toggleActionSet(act)">
+                {{ act.set ? 'ВКЛ' : 'ВЫКЛ' }}
+              </button>
+              <button class="scn-icon scn-icon-del" (click)="removeAction(rule, j)"
+                      [disabled]="rule.then.length === 1" title="Убрать действие">✕</button>
+            </div>
+
+            <button class="rule-add-action" (click)="addAction(rule)">+ ещё действие</button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
   </div>
 </div>
