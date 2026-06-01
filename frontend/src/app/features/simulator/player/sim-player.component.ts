@@ -54,25 +54,33 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   private hintShape: Konva.Shape | null = null;
 
   // ── Физика котла ──────────────────────────────────────────────────────────────
-  /** Включена ли горелка (греет систему). */
+  /** Нажата ли кнопка «Пуск горелки». */
   private burnerOn = false;
+  /** Есть ли в схеме орган управления подачей топлива (задвижка/кран). */
+  private fuelControlExists = false;
   /** Текущее значение каждой физической величины. */
   private physicsState: Record<string, number> = {};
   /** Ноды-индикаторы, которые отображают физические величины. */
-  private physicsTargets: Array<{ valueText: any; quantity: string }> = [];
+  private physicsTargets: Array<{ group: any; valueText: any; quantity: string }> = [];
   private physicsInterval: any = null;
+
+  /** Температура кипения — порог, с которого начинает расти давление пара. */
+  private readonly BOIL_TEMP = 100;
+  /** Ключевые слова органов подачи топлива. */
+  private readonly FUEL_KEYS = ['fuel', 'топл', 'газ'];
 
   /**
    * Конфигурация физических величин:
-   *  min   — значение при выключенной горелке (холодное состояние)
-   *  max   — установившееся рабочее значение при включённой горелке
-   *  rate  — изменение за один тик (100 мс)
-   *  dec   — знаков после запятой при выводе
-   *  keys  — ключевые слова в variable/label, по которым нода привязывается к величине
+   *  min     — значение в холодном состоянии (нет нагрева)
+   *  max     — установившееся рабочее значение при нагреве
+   *  rate    — изменение за один тик (100 мс); 0 для вычисляемых величин
+   *  dec     — знаков после запятой при выводе
+   *  derived — величина не интегрируется по времени, а вычисляется из других
+   *  keys    — ключевые слова в variable/label для привязки ноды к величине
    */
-  private readonly PHYSICS: Record<string, { min: number; max: number; rate: number; dec: number; keys: string[] }> = {
-    temperature: { min: 20, max: 185, rate: 2.2,  dec: 0, keys: ['temp', 'термо', 'температ', 't_'] },
-    pressure:    { min: 0,  max: 13,  rate: 0.16, dec: 1, keys: ['pressure', 'press', 'давл', 'маномет', 'p_'] },
+  private readonly PHYSICS: Record<string, { min: number; max: number; rate: number; dec: number; derived?: boolean; keys: string[] }> = {
+    temperature: { min: 20, max: 185, rate: 2.2,  dec: 0, keys: ['temp', 'therm', 'термо', 'температ', 't_'] },
+    pressure:    { min: 0,  max: 13,  rate: 0,    dec: 1, derived: true, keys: ['pressure', 'press', 'давл', 'маномет', 'p_'] },
     power:       { min: 0,  max: 100, rate: 1.4,  dec: 0, keys: ['power', 'мощн', 'pwr'] },
     level:       { min: 55, max: 72,  rate: 0.25, dec: 0, keys: ['level', 'уровен', 'барабан'] },
   };
@@ -280,6 +288,16 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         g.add(new Konva.Circle({ x: w/2, y: h/2, radius: r, fill: '#1A2A3A', stroke: p.color ?? '#9C27B0', strokeWidth: 2 }));
         g.add(new Konva.RegularPolygon({ x: w/2, y: h/2, sides: 3, radius: r-6, fill: p.color ?? '#9C27B0', rotation: 90 }));
         g.add(this.labelText(el.label, w, h + 2));
+        return g;
+      }
+      case 'level': {
+        // Вертикальный уровнемер: корпус, заливка снизу (.fill) и значение (.value)
+        const g = new Konva.Group({ x, y });
+        const barH = h - 16;
+        g.add(new Konva.Rect({ width: w, height: barH, fill: '#0D1F2D', stroke: '#4FC3F7', strokeWidth: 1, cornerRadius: 3, name: 'bg' }));
+        g.add(new Konva.Rect({ x: 2, y: barH - 2, width: w - 4, height: 0, fill: p.color ?? '#1E88E5', cornerRadius: 2, name: 'fill' }));
+        g.add(new Konva.Text({ x: 0, y: barH / 2 - 7, width: w, text: '0', fontSize: 13, fill: '#ffffff', align: 'center', fontStyle: 'bold', name: 'value' }));
+        g.add(this.labelText(el.label, w, h - 12));
         return g;
       }
       case 'label':
@@ -493,7 +511,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.physicsTargets = [];
     this.physicsState = {};
     this.burnerOn = false;
-    const indicatorTypes = ['gauge', 'sensor', 'display'];
+    const indicatorTypes = ['gauge', 'sensor', 'display', 'level'];
 
     this.layer.find('Group').forEach((g: any) => {
       const type = g.getAttr('elementType');
@@ -505,33 +523,62 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Фолбэк по типу, если по ключевым словам не определилось
       if (!quantity) {
-        quantity = type === 'display' ? 'power' : type === 'sensor' ? 'temperature' : 'pressure';
+        quantity = type === 'display' ? 'power'
+                 : type === 'sensor'  ? 'temperature'
+                 : type === 'level'   ? 'level'
+                 : 'pressure';
       }
 
       const valueText = g.findOne('.value');
-      if (!valueText) return;
-
-      this.physicsTargets.push({ valueText, quantity });
-      this.physicsState[quantity] = this.PHYSICS[quantity].min;
+      this.physicsTargets.push({ group: g, valueText, quantity });
     });
 
+    // Температура всегда нужна (от неё зависит давление), даже без термометра на схеме
+    Object.keys(this.PHYSICS).forEach(q => { this.physicsState[q] = this.PHYSICS[q].min; });
+
+    // Есть ли в схеме орган управления подачей топлива
+    this.fuelControlExists = (this.template?.elements ?? []).some((el: any) => {
+      const hay = `${el.variable ?? ''} ${el.label ?? ''}`.toLowerCase();
+      const isControl = ['valve', 'button', 'pump'].includes(el.type);
+      return isControl && this.FUEL_KEYS.some(k => hay.includes(k));
+    });
+
+    this.deriveValues();
     this.renderPhysics();
   }
 
-  /** Определяет, запускает или останавливает ли клик горелку. */
+  /**
+   * Идёт ли сейчас нагрев. Условие (уровень 2):
+   * горелка включена И (нет органа подачи топлива ИЛИ топливо открыто).
+   */
+  private isHeating(): boolean {
+    if (!this.burnerOn) return false;
+    if (!this.fuelControlExists) return true;
+    return this.isFuelOpen();
+  }
+
+  /** Открыта ли хотя бы одна задвижка/кран подачи топлива. */
+  private isFuelOpen(): boolean {
+    return (this.template?.elements ?? []).some((el: any) => {
+      const hay = `${el.variable ?? ''} ${el.label ?? ''}`.toLowerCase();
+      const isFuel = this.FUEL_KEYS.some(k => hay.includes(k));
+      return isFuel && this.variables[el.variable] === true;
+    });
+  }
+
+  /**
+   * Реагирует на клик по управляющему элементу: пуск/останов горелки.
+   * Любой клик по управлению пересчитывает физику (могли открыть топливо).
+   */
   private checkBurnerTrigger(variable: string, value: any): void {
     const hay = `${variable ?? ''} ${this.getElementLabel(variable)}`.toLowerCase();
     const isStart = ['burner_start', 'start', 'пуск', 'зажиг', 'розжиг', 'ignite'].some(k => hay.includes(k));
     const isStop  = ['burner_stop', 'stop', 'стоп', 'глуш', 'отключ', 'останов'].some(k => hay.includes(k));
 
-    if (isStart && value) this.setBurner(true);
-    else if (isStop)      this.setBurner(false);
-  }
+    if (isStart && value) this.burnerOn = true;
+    else if (isStop)      this.burnerOn = false;
 
-  /** Включает/выключает горелку и запускает цикл пересчёта величин. */
-  private setBurner(on: boolean): void {
-    if (this.burnerOn === on) return;
-    this.burnerOn = on;
+    // Состояние подачи топлива тоже могло измениться — запускаем пересчёт
     this.startPhysicsLoop();
   }
 
@@ -544,14 +591,15 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.physicsInterval) { clearInterval(this.physicsInterval); this.physicsInterval = null; }
   }
 
-  /** Один шаг физики: плавно двигает каждую величину к целевому значению. */
+  /** Один шаг физики: интегрирует «приводные» величины, давление вычисляет из температуры. */
   private physicsTick(): void {
-    let changed = false;
+    const heating = this.isHeating();
     let allSettled = true;
 
     Object.keys(this.physicsState).forEach(q => {
       const cfg = this.PHYSICS[q];
-      const target = this.burnerOn ? cfg.max : cfg.min;
+      if (cfg.derived) return;                    // вычисляемые величины не интегрируем
+      const target = heating ? cfg.max : cfg.min;
       const cur = this.physicsState[q];
       if (Math.abs(cur - target) < 0.005) return;
 
@@ -560,20 +608,44 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
       let next = cur + dir * cfg.rate;
       if ((dir > 0 && next > target) || (dir < 0 && next < target)) next = target;
       this.physicsState[q] = next;
-      changed = true;
     });
 
-    if (changed) this.renderPhysics();
-    // Всё устаканилось — цикл больше не нужен (запустится снова при следующем триггере)
+    this.deriveValues();
+    this.renderPhysics();
+    // Всё устаканилось — цикл больше не нужен (запустится снова при следующем клике/триггере)
     if (allSettled) this.stopPhysicsLoop();
   }
 
-  /** Записывает текущие значения физики в текстовые ноды индикаторов. */
+  /**
+   * Вычисляет производные величины (уровень 1).
+   * Давление пара — функция температуры: до точки кипения 0, дальше
+   * линейно растёт до рабочего максимума при максимальной температуре.
+   */
+  private deriveValues(): void {
+    const t    = this.physicsState['temperature'] ?? this.PHYSICS['temperature'].min;
+    const tMax = this.PHYSICS['temperature'].max;
+    const cfg  = this.PHYSICS['pressure'];
+    const frac = Math.max(0, (t - this.BOIL_TEMP) / (tMax - this.BOIL_TEMP));
+    this.physicsState['pressure'] = Math.min(cfg.max, frac * cfg.max);
+  }
+
+  /** Записывает текущие значения физики в индикаторы (текст + заливка уровнемера). */
   private renderPhysics(): void {
     this.physicsTargets.forEach(t => {
       const v = this.physicsState[t.quantity] ?? 0;
       const dec = this.PHYSICS[t.quantity]?.dec ?? 0;
-      t.valueText.text(v.toFixed(dec));
+      if (t.valueText) t.valueText.text(v.toFixed(dec));
+
+      // Вертикальный уровнемер — двигаем заливку снизу вверх (значение в %)
+      const fill = t.group?.findOne?.('.fill');
+      const bg   = t.group?.findOne?.('.bg');
+      if (fill && bg) {
+        const barH = bg.height();
+        const frac = Math.max(0, Math.min(1, v / 100));
+        const fh = (barH - 4) * frac;
+        fill.height(fh);
+        fill.y(barH - 2 - fh);
+      }
     });
     this.layer.batchDraw();
   }
