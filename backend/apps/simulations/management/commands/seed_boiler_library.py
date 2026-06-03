@@ -2,6 +2,18 @@ from django.core.management.base import BaseCommand
 from apps.simulations.models import ElementLibrary
 
 BOILER_ELEMENTS = [
+    # ── equipment ───────────────────────────────────────────────────────────────
+    {
+        "id": "boiler-vessel",
+        "name": "Котёл (барабан)",
+        "category": "equipment",
+        "type": "boiler",
+        "icon": "🏭",
+        "default_properties": {
+            "width": 200, "height": 280, "color": "#5A6B7A",
+        },
+    },
+
     # ── controls ────────────────────────────────────────────────────────────────
     {
         "id": "boiler-btn-burner-start",

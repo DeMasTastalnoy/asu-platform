@@ -313,8 +313,19 @@
 
         <div class="scn-list">
           <div class="conn-item" *ngFor="let c of connections; let i = index">
-            <span class="conn-text">{{ varLabel(c.from) }} ↔ {{ varLabel(c.to) }}</span>
-            <button class="scn-icon scn-icon-del" (click)="removeConnection(i)" title="Удалить связь">✕</button>
+            <div class="conn-row1">
+              <span class="conn-text">{{ varLabel(c.from) }} ↔ {{ varLabel(c.to) }}</span>
+              <button class="scn-icon scn-icon-del" (click)="removeConnection(i)" title="Удалить связь">✕</button>
+            </div>
+            <div class="conn-row2">
+              <select class="scn-select conn-medium" [(ngModel)]="c.medium" (ngModelChange)="redrawConnectionsPublic()">
+                <option *ngFor="let m of MEDIA" [value]="m.value">{{ m.label }}</option>
+              </select>
+              <label class="conn-width-lbl">ширина
+                <input type="number" min="2" max="40" class="conn-width"
+                       [(ngModel)]="c.width" (ngModelChange)="redrawConnectionsPublic()"/>
+              </label>
+            </div>
           </div>
         </div>
       </ng-container>

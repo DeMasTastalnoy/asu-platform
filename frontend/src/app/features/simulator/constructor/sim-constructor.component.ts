@@ -49,8 +49,10 @@ interface Rule {
 
 /** Связь (труба/провод) между двумя элементами по их variable. */
 interface Connection {
-  from: string;
-  to:   string;
+  from:    string;
+  to:      string;
+  medium?: string;   // 'none' | 'steam' | 'water' | 'fuel' | 'air' — задаёт цвет
+  width?:  number;   // толщина трубы (px)
 }
 
 @Component({
@@ -128,6 +130,16 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   rules: Rule[] = [];
   /** Связи (трубы) между элементами. */
   connections: Connection[] = [];
+  /** Среды трубопровода: значение → подпись и цвет. */
+  readonly MEDIA = [
+    { value: 'none',  label: '— без среды —', color: '#90A4AE' },
+    { value: 'steam', label: 'Пар',          color: '#CFD8DC' },
+    { value: 'water', label: 'Вода',         color: '#1E88E5' },
+    { value: 'fuel',  label: 'Топливо',      color: '#FB8C00' },
+    { value: 'air',   label: 'Воздух',       color: '#26C6DA' },
+  ];
+  /** Толщина трубы по умолчанию (средняя). */
+  readonly DEFAULT_CONN_WIDTH = 8;
   /** Включён ли режим связывания (клик по двум элементам создаёт связь). */
   connectMode = false;
   /** Первый выбранный элемент в режиме связывания (variable). */
@@ -321,8 +333,9 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
 
   getCategoryLabel(cat: string): string {
     const map: Record<string, string> = {
+      equipment: 'Оборудование',
       controls: 'Управление', indicators: 'Индикаторы',
-      pipes: 'Трубопровод', valves: 'Арматура', sensors: 'Датчики',
+      pipes: 'Трубопровод (декор)', valves: 'Арматура', sensors: 'Датчики',
     };
     return map[cat] ?? cat;
   }
@@ -397,6 +410,9 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
         break;
       case 'pump':
         shape = this.createPump(x, y, w, h, props, uid, label);
+        break;
+      case 'boiler':
+        shape = this.createBoiler(x, y, w, h, props, uid, label);
         break;
       case 'label':
         shape = this.createLabel(x, y, props, uid);
@@ -489,6 +505,22 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     g.add(new Konva.Circle({ x: w / 2, y: h / 2, radius: r, fill: '#1A2A3A', stroke: props.color ?? '#9C27B0', strokeWidth: 2 }));
     g.add(new Konva.RegularPolygon({ x: w / 2, y: h / 2, sides: 3, radius: r - 6, fill: props.color ?? '#9C27B0', rotation: 90 }));
     g.add(new Konva.Text({ x: 0, y: h + 2, width: w, text: name, fontSize: 10, fill: '#ffffff', align: 'center', fontStyle: 'bold' }));
+    return g;
+  }
+
+  /** Котёл (барабан): корпус, зеркало воды и топка снизу. */
+  createBoiler(x: number, y: number, w: number, h: number, props: any, uid: string, name: string): any {
+    const g = new Konva.Group({ x, y, draggable: true, id: uid });
+    // корпус
+    g.add(new Konva.Rect({ width: w, height: h, fill: '#2B3A47', stroke: props.color ?? '#5A6B7A', strokeWidth: 2, cornerRadius: 16 }));
+    // зеркало воды (нижняя часть барабана)
+    const wl = Math.round(h * 0.5);
+    g.add(new Konva.Rect({ x: 6, y: wl, width: w - 12, height: h - wl - 22, fill: '#15466b', opacity: 0.55, cornerRadius: 4 }));
+    g.add(new Konva.Line({ points: [8, wl, w - 8, wl], stroke: '#4FC3F7', strokeWidth: 1.5, dash: [7, 4] }));
+    // топка снизу
+    g.add(new Konva.Rect({ x: 12, y: h - 20, width: w - 24, height: 12, fill: '#5D2E12', cornerRadius: 5 }));
+    // название
+    g.add(new Konva.Text({ x: 0, y: 14, width: w, text: name, fontSize: 14, fill: '#CFD8DC', align: 'center', fontStyle: 'bold' }));
     return g;
   }
 
@@ -814,13 +846,31 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   private addConnection(from: string, to: string): void {
     const exists = this.connections.some(c =>
       (c.from === from && c.to === to) || (c.from === to && c.to === from));
-    if (!exists) this.connections.push({ from, to });
+    if (!exists) this.connections.push({ from, to, medium: 'none', width: this.DEFAULT_CONN_WIDTH });
     this.redrawConnections();
+  }
+
+  /** Цвет трубы по среде. */
+  mediumColor(medium?: string): string {
+    return this.MEDIA.find(m => m.value === (medium ?? 'none'))?.color ?? '#90A4AE';
   }
 
   removeConnection(i: number): void {
     this.connections.splice(i, 1);
     this.redrawConnections();
+  }
+
+  /** Публичная обёртка для перерисовки связей из шаблона (при смене среды/ширины). */
+  redrawConnectionsPublic(): void {
+    this.redrawConnections();
+  }
+
+  /** Ортогональная (Г-образная) трасса между точками — длинную сторону ведём первой. */
+  private elbow(a: { x: number; y: number }, b: { x: number; y: number }): number[] {
+    const dx = Math.abs(b.x - a.x), dy = Math.abs(b.y - a.y);
+    return dx >= dy
+      ? [a.x, a.y, b.x, a.y, b.x, b.y]   // горизонталь → вертикаль
+      : [a.x, a.y, a.x, b.y, b.x, b.y];  // вертикаль → горизонталь
   }
 
   /** Центр элемента по его variable (для концов линии связи). */
@@ -842,8 +892,10 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       const b = this.elementCenter(c.to);
       if (!a || !b) return;
       const line = new Konva.Line({
-        points: [a.x, a.y, b.x, b.y],
-        stroke: '#90A4AE', strokeWidth: 4, lineCap: 'round',
+        points: this.elbow(a, b),
+        stroke: this.mediumColor(c.medium),
+        strokeWidth: c.width ?? this.DEFAULT_CONN_WIDTH,
+        lineCap: 'round', lineJoin: 'round',
         name: 'connection', listening: false,
       });
       this.layer.add(line);
@@ -857,7 +909,12 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     const vars = new Set(this.allElements().map(e => e.variable));
     return this.connections
       .filter(c => vars.has(c.from) && vars.has(c.to))
-      .map(c => ({ from: c.from, to: c.to }));
+      .map(c => ({
+        from:   c.from,
+        to:     c.to,
+        medium: c.medium ?? 'none',
+        width:  c.width ?? this.DEFAULT_CONN_WIDTH,
+      }));
   }
 
   /** Сохраняет текущее состояние шаблона (POST/PATCH) и возвращает Observable ответа. */
@@ -946,7 +1003,12 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
         }));
       this.connections = [...(tmpl.connections ?? [])]
         .filter((c: any) => c?.from && c?.to)
-        .map((c: any) => ({ from: c.from, to: c.to }));
+        .map((c: any) => ({
+          from:   c.from,
+          to:     c.to,
+          medium: c.medium ?? 'none',
+          width:  c.width ?? this.DEFAULT_CONN_WIDTH,
+        }));
       if (!this.moduleId && tmpl.module) {
         this.moduleId = String(tmpl.module);
       }

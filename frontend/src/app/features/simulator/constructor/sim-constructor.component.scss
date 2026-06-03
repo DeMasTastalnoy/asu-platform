@@ -614,13 +614,41 @@
 
 .conn-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: 7px;
   padding: 8px 10px;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
   background: #fafbfc;
+}
+.conn-row1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.conn-row2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.conn-medium { flex: 1; min-width: 0; }
+.conn-width-lbl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+}
+.conn-width {
+  width: 52px;
+  padding: 5px 6px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 12px;
+  outline: none;
+  &:focus { border-color: #185FA5; }
 }
 .conn-text {
   font-size: 12px;

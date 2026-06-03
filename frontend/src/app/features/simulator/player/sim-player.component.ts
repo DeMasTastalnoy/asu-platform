@@ -254,13 +254,24 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
       const h = p.height ?? el.height ?? 60;
       return { x: (el.x ?? 0) + w / 2, y: (el.y ?? 0) + h / 2 };
     };
+    const elbow = (a: any, b: any) => {
+      const dx = Math.abs(b.x - a.x), dy = Math.abs(b.y - a.y);
+      return dx >= dy
+        ? [a.x, a.y, b.x, a.y, b.x, b.y]
+        : [a.x, a.y, a.x, b.y, b.x, b.y];
+    };
+    const mediumColor: Record<string, string> = {
+      none: '#90A4AE', steam: '#CFD8DC', water: '#1E88E5', fuel: '#FB8C00', air: '#26C6DA',
+    };
     (connections ?? []).forEach((c: any) => {
       const a = center(byVar[c.from]);
       const b = center(byVar[c.to]);
       if (!a || !b) return;
       this.layer.add(new Konva.Line({
-        points: [a.x, a.y, b.x, b.y],
-        stroke: '#90A4AE', strokeWidth: 4, lineCap: 'round', listening: false,
+        points: elbow(a, b),
+        stroke: mediumColor[c.medium ?? 'none'] ?? '#90A4AE',
+        strokeWidth: c.width ?? 8,
+        lineCap: 'round', lineJoin: 'round', listening: false,
       }) as any);
     });
   }
@@ -386,6 +397,16 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         g.add(new Konva.Rect({ x: 2, y: barH - 2, width: w - 4, height: 0, fill: p.color ?? '#1E88E5', cornerRadius: 2, name: 'fill' }));
         g.add(new Konva.Text({ x: 0, y: barH / 2 - 7, width: w, text: '0', fontSize: 13, fill: '#ffffff', align: 'center', fontStyle: 'bold', name: 'value' }));
         g.add(this.labelText(el.label, w, h - 12));
+        return g;
+      }
+      case 'boiler': {
+        const g = new Konva.Group({ x, y });
+        g.add(new Konva.Rect({ width: w, height: h, fill: '#2B3A47', stroke: p.color ?? '#5A6B7A', strokeWidth: 2, cornerRadius: 16 }));
+        const wl = Math.round(h * 0.5);
+        g.add(new Konva.Rect({ x: 6, y: wl, width: w - 12, height: h - wl - 22, fill: '#15466b', opacity: 0.55, cornerRadius: 4 }));
+        g.add(new Konva.Line({ points: [8, wl, w - 8, wl], stroke: '#4FC3F7', strokeWidth: 1.5, dash: [7, 4] }));
+        g.add(new Konva.Rect({ x: 12, y: h - 20, width: w - 24, height: 12, fill: '#5D2E12', cornerRadius: 5 }));
+        g.add(new Konva.Text({ x: 0, y: 14, width: w, text: el.label, fontSize: 14, fill: '#CFD8DC', align: 'center', fontStyle: 'bold' }));
         return g;
       }
       case 'label':
