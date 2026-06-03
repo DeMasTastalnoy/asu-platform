@@ -100,6 +100,67 @@
                  (change)="updateLabel($any($event.target).value)"
                  placeholder="Метка элемента"/>
         </div>
+        <!-- Геометрия -->
+        <div class="prop-row">
+          <div class="prop-group">
+            <label>Ширина</label>
+            <input type="number" min="4"
+                   [value]="selectedElement.props.width"
+                   (change)="updateProp('width', $any($event.target).value, true)"/>
+          </div>
+          <div class="prop-group">
+            <label>Высота</label>
+            <input type="number" min="4"
+                   [value]="selectedElement.props.height"
+                   (change)="updateProp('height', $any($event.target).value, true)"/>
+          </div>
+        </div>
+
+        <!-- Цвет (для элементов, которые его используют) -->
+        <div class="prop-group"
+             *ngIf="['button','lamp','valve','pump','pipe','safety-valve'].includes(selectedElement.type)">
+          <label>Цвет</label>
+          <input type="color" class="prop-color"
+                 [value]="selectedElement.props.color || '#888888'"
+                 (change)="updateProp('color', $any($event.target).value)"/>
+        </div>
+
+        <!-- Физика: давление срабатывания предохранительного клапана -->
+        <div class="prop-group" *ngIf="selectedElement.type === 'safety-valve'">
+          <label>Давление срабатывания, бар</label>
+          <input type="number" min="0" step="0.5"
+                 [value]="selectedElement.props.triggerPressure"
+                 (change)="updateProp('triggerPressure', $any($event.target).value, true)"/>
+        </div>
+
+        <!-- Физика: рабочий диапазон индикатора -->
+        <ng-container *ngIf="['gauge','level','sensor'].includes(selectedElement.type)">
+          <div class="prop-row">
+            <div class="prop-group">
+              <label>Норма min</label>
+              <input type="number"
+                     [value]="selectedElement.props.normalMin"
+                     (change)="updateProp('normalMin', $any($event.target).value, true)"/>
+            </div>
+            <div class="prop-group">
+              <label>Норма max</label>
+              <input type="number"
+                     [value]="selectedElement.props.normalMax"
+                     (change)="updateProp('normalMax', $any($event.target).value, true)"/>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Единица измерения -->
+        <div class="prop-group"
+             *ngIf="['gauge','level','sensor','display'].includes(selectedElement.type)">
+          <label>Единица измерения</label>
+          <input type="text"
+                 [value]="selectedElement.props.unit || ''"
+                 (change)="updateProp('unit', $any($event.target).value)"
+                 placeholder="бар, °C, %"/>
+        </div>
+
         <div class="prop-group">
           <label>Позиция X / Y</label>
           <div class="prop-value">{{ selectedElement.x }} / {{ selectedElement.y }}</div>

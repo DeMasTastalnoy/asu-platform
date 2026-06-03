@@ -87,7 +87,7 @@ export class SimListComponent implements OnInit {
   }
 
   open(t: TemplateRow): void {
-    this.router.navigate(['/simulator', t.id, 'play']);
+    this.router.navigate(['/simulator', t.id, 'play'], { queryParams: { from: 'list' } });
   }
 
   edit(t: TemplateRow): void {

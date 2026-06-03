@@ -43,6 +43,8 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   enrollmentId: string | null = null;
   /** Запущено из конструктора на проверку — «Назад» ведёт обратно в редактор. */
   testMode = false;
+  /** Открыто из списка симуляций — «Назад» ведёт к списку. */
+  fromList = false;
   user: any;
 
   // Состояние переменных симуляции
@@ -138,6 +140,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.simulationId = this.route.snapshot.paramMap.get('id') ?? '';
     this.enrollmentId = this.route.snapshot.queryParamMap.get('enrollment');
     this.testMode     = this.route.snapshot.queryParamMap.get('test') === '1';
+    this.fromList     = this.route.snapshot.queryParamMap.get('from') === 'list';
     this.loadTemplate();
   }
 

@@ -513,9 +513,49 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   updateLabel(value: string): void {
-    if (!this.selectedNode) return;
+    if (!this.selectedNode || !this.selectedElement) return;
     this.selectedNode.setAttr('label', value);
-    if (this.selectedElement) this.selectedElement.label = value;
+    this.selectedElement.label = value;
+    this.rebuildSelected();   // обновить подпись на холсте
+  }
+
+  /** Изменение свойства (props) выбранного элемента с перерисовкой ноды. */
+  updateProp(key: string, value: any, numeric = false): void {
+    if (!this.selectedNode || !this.selectedElement) return;
+    let v: any = value;
+    if (numeric) {
+      v = parseFloat(value);
+      if (Number.isNaN(v)) return;
+    }
+    const props = { ...(this.selectedNode.getAttr('canvasProps') ?? {}), [key]: v };
+    this.selectedNode.setAttr('canvasProps', props);
+    this.selectedElement.props = props;
+    this.rebuildSelected();
+  }
+
+  /** Пересоздаёт выбранную ноду из её текущих props (id/variable/label/позиция сохраняются). */
+  private rebuildSelected(): void {
+    const node = this.selectedNode;
+    if (!node) return;
+    const elementType = node.getAttr('elementType');
+    const libId       = node.getAttr('libId');
+    const id          = node.getAttr('elementId');
+    const variable    = node.getAttr('variable');
+    const label       = node.getAttr('label');
+    const props       = node.getAttr('canvasProps') ?? {};
+    const x = node.x();
+    const y = node.y();
+
+    const libEl = this.libraryElements.find(e => e.id === libId) ?? {
+      id: libId ?? id, name: label ?? elementType, category: 'controls',
+      type: elementType, icon: '?', default_properties: props,
+    };
+
+    this.transformer.nodes([]);
+    node.destroy();
+
+    const newNode = this.addElementToCanvas(libEl, x, y, { id, variable, label, props });
+    this.selectNode(newNode);
   }
 
   deleteSelected(): void {

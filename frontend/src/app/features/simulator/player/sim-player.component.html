@@ -1,7 +1,8 @@
 <div class="player">
   <div class="topbar">
-    <a *ngIf="!testMode" routerLink="/courses" class="back-btn">← Назад</a>
     <a *ngIf="testMode" [routerLink]="['/simulator', simulationId, 'edit']" class="back-btn">← К редактору</a>
+    <a *ngIf="!testMode && fromList" routerLink="/simulator" class="back-btn">← К списку</a>
+    <a *ngIf="!testMode && !fromList" routerLink="/courses" class="back-btn">← Назад</a>
     <span class="sim-name">
       {{ template?.name ?? 'Загрузка...' }}
       <span class="test-badge" *ngIf="testMode">проверка</span>
