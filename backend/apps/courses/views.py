@@ -87,7 +87,23 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsInstructorOrReadOnly]
 
     def get_queryset(self):
-        return CourseModule.objects.select_related("course")
+        qs = CourseModule.objects.select_related("course")
+        # Список модулей скоупим по роли (для вкладки «Тестирование» и т.п.);
+        # доступ к конкретному модулю (detail/complete) оставляем как был.
+        if self.action == "list":
+            user = self.request.user
+            role = getattr(user, "primary_role", None)
+            if role == "instructor":
+                qs = qs.filter(course__instructor=user)
+            elif role == "student":
+                enrolled = Enrollment.objects.filter(
+                    student=user
+                ).values_list("course_id", flat=True)
+                qs = qs.filter(course_id__in=enrolled)
+            type_param = self.request.query_params.get("type")
+            if type_param:
+                qs = qs.filter(type=type_param)
+        return qs
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):

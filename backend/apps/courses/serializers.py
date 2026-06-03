@@ -16,16 +16,21 @@ class TestSettingsSerializer(serializers.ModelSerializer):
 
 
 class CourseModuleSerializer(serializers.ModelSerializer):
-    test_settings = TestSettingsSerializer(read_only=True)
-    progress      = serializers.SerializerMethodField()
+    test_settings  = TestSettingsSerializer(read_only=True)
+    progress       = serializers.SerializerMethodField()
+    course_title   = serializers.CharField(source="course.title", read_only=True)
+    question_count = serializers.SerializerMethodField()
 
     class Meta:
         model  = CourseModule
         fields = (
-            "id", "title", "type", "content", "file_url",
+            "id", "course", "course_title", "title", "type", "content", "file_url",
             "order_num", "is_required", "unlock_after",
-            "test_settings", "progress", "created_at",
+            "test_settings", "question_count", "progress", "created_at",
         )
+
+    def get_question_count(self, obj):
+        return obj.questions.count()
 
     def get_progress(self, obj):
         request = self.context.get("request")

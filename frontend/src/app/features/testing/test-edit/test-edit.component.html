@@ -1,0 +1,70 @@
+<div class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <a class="back-btn" (click)="back()">← К тестам</a>
+      <span class="page-title">Вопросы: {{ moduleTitle || 'тест' }}</span>
+    </div>
+    <div class="topbar-right">
+      <span class="saved-msg" *ngIf="saved">✓ Сохранено</span>
+      <button class="btn-primary" (click)="save()" [disabled]="saving || !allValid">
+        {{ saving ? 'Сохранение...' : 'Сохранить' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка...</div>
+    <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="!loading">
+      <div class="empty" *ngIf="questions.length === 0">
+        Вопросов пока нет. Добавьте первый вопрос.
+      </div>
+
+      <div class="q-card" *ngFor="let q of questions; let i = index"
+           [class.q-invalid]="!questionValid(q)">
+        <div class="q-head">
+          <span class="q-num">{{ i + 1 }}</span>
+          <select class="q-type" [(ngModel)]="q.type" (ngModelChange)="onTypeChange(q)">
+            <option *ngFor="let t of TYPES" [value]="t.value">{{ t.label }}</option>
+          </select>
+          <label class="q-points">баллы
+            <input type="number" min="1" max="100" [(ngModel)]="q.points"/>
+          </label>
+          <div class="q-ctrl">
+            <button class="ic" (click)="moveQuestion(i,-1)" [disabled]="i===0" title="Вверх">↑</button>
+            <button class="ic" (click)="moveQuestion(i,1)" [disabled]="i===questions.length-1" title="Вниз">↓</button>
+            <button class="ic ic-del" (click)="removeQuestion(i)" title="Удалить вопрос">✕</button>
+          </div>
+        </div>
+
+        <textarea class="q-text" rows="2" [(ngModel)]="q.question"
+                  placeholder="Текст вопроса"></textarea>
+
+        <!-- Варианты для single / multiple -->
+        <ng-container *ngIf="q.type !== 'text'">
+          <div class="opt" *ngFor="let o of q.options; let oi = index">
+            <input *ngIf="q.type === 'single'" type="radio" [name]="'correct-' + i"
+                   [checked]="o.correct" (change)="setCorrectSingle(q, oi)"/>
+            <input *ngIf="q.type === 'multiple'" type="checkbox" [(ngModel)]="o.correct"/>
+            <input class="opt-text" type="text" [(ngModel)]="o.text"
+                   [placeholder]="'Вариант ' + (oi + 1)"/>
+            <button class="ic ic-del" (click)="removeOption(q, oi)"
+                    [disabled]="q.options.length <= 2" title="Убрать вариант">✕</button>
+          </div>
+          <button class="add-opt" (click)="addOption(q)">+ вариант</button>
+          <div class="q-hint">Отметьте {{ q.type === 'single' ? 'один правильный' : 'правильные' }} вариант(ы).</div>
+        </ng-container>
+
+        <!-- Ответ для text -->
+        <ng-container *ngIf="q.type === 'text'">
+          <input class="opt-text answer" type="text" [(ngModel)]="q.answerText"
+                 placeholder="Правильный ответ (точное совпадение)"/>
+          <div class="q-hint">Ответ студента сравнивается с этим текстом точно (регистр учитывается).</div>
+        </ng-container>
+      </div>
+
+      <button class="btn-add-q" (click)="addQuestion()">+ Добавить вопрос</button>
+    </ng-container>
+  </div>
+</div>

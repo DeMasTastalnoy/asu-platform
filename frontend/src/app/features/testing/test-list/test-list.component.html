@@ -1,0 +1,39 @@
+<div class="page">
+  <div class="topbar">
+    <span class="page-title">Тесты</span>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка...</div>
+    <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="!loading">
+      <div class="hint" *ngIf="isInstructor">
+        Тесты создаются как модули типа «Тест» внутри курсов. Здесь — все ваши тесты:
+        нажмите «Вопросы», чтобы собрать или изменить их.
+      </div>
+
+      <div class="empty" *ngIf="tests.length === 0">
+        <p *ngIf="isInstructor">Тестов пока нет. Добавьте в курсе модуль типа «Тест», затем соберите вопросы здесь.</p>
+        <p *ngIf="!isInstructor">Доступных тестов пока нет.</p>
+      </div>
+
+      <div class="test-list" *ngIf="tests.length > 0">
+        <div class="test-item" *ngFor="let t of tests">
+          <div class="test-main">
+            <div class="test-title">{{ t.title }}</div>
+            <div class="test-meta">
+              <span>{{ t.course_title }}</span>
+              <span class="dot">·</span>
+              <span [class.warn]="t.question_count === 0">{{ t.question_count }} вопрос(ов)</span>
+            </div>
+          </div>
+          <div class="test-actions">
+            <button class="btn-sm btn-sm-outline" *ngIf="isInstructor" (click)="edit(t)">Вопросы</button>
+            <button class="btn-sm" (click)="play(t)" [disabled]="t.question_count === 0">Пройти</button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>
