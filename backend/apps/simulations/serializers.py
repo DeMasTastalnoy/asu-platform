@@ -54,6 +54,7 @@ class SimulationSubmitSerializer(serializers.Serializer):
     SAFETY_TRIP_FACTOR    = 0.5   # балл умножается на коэффициент при срабатывании защиты
     ALARM_PENALTY         = 0.5   # дополнительный вычет за каждую аварию
     PROCESS_VIOLATION_FACTOR = 0.5  # множитель при нарушении технологического режима пуска
+    ERROR_PENALTY         = 1     # вычет за каждое ошибочное действие (неверный клик)
 
     simulation_id  = serializers.IntegerField()
     enrollment_id  = serializers.IntegerField(required=False, allow_null=True)
@@ -99,6 +100,18 @@ class SimulationSubmitSerializer(serializers.Serializer):
             ).count() + 1
 
         deviations, score, max_score = self._evaluate(actions, sim.reference_scenario, sim.elements)
+
+        # Штраф за ошибочные действия (неверные клики) — до мультипликативных штрафов
+        errors_count = self.validated_data.get("errors_count", 0)
+        if errors_count and score is not None:
+            penalized = max(0.0, score - errors_count * self.ERROR_PENALTY)
+            if penalized != score:
+                deviations.append({
+                    "type":    "errors",
+                    "detail":  f"Ошибочных действий: {errors_count}",
+                    "penalty": round(score - penalized, 2),
+                })
+            score = round(penalized, 2)
 
         # Штраф за нарушение режима эксплуатации (срабатывание аварийной защиты)
         safety_tripped = self.validated_data.get("safety_tripped", False)

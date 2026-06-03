@@ -97,6 +97,14 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Пройдён ли процесс «чисто»: пар открыт на рабочем давлении и горелку не глушили рано. */
   processOk = true;
 
+  // ── Связи / поток ──────────────────────────────────────────────────────────────
+  /** Линии связей с их данными — для подсветки потока. */
+  private connLines: { line: any; conn: any }[] = [];
+  /** Связи, сгруппированные по среде (для графовой физики). */
+  private mediumConns: Record<string, any[]> = { fuel: [], air: [], steam: [], water: [], none: [] };
+  /** Анимация «бегущего» пунктира активных связей. */
+  private flowAnim: any = null;
+
   /** Температура кипения — порог, с которого начинает расти давление пара. */
   private readonly BOIL_TEMP = 100;
   /** Рабочее давление при открытом сбросе пара (безопасный режим). */
@@ -149,6 +157,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.timerInterval) clearInterval(this.timerInterval);
     this.stopPhysicsLoop();
+    if (this.flowAnim) { this.flowAnim.stop(); this.flowAnim = null; }
     if (this.stage) this.stage.destroy();
   }
 
@@ -263,16 +272,19 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     const mediumColor: Record<string, string> = {
       none: '#90A4AE', steam: '#CFD8DC', water: '#1E88E5', fuel: '#FB8C00', air: '#26C6DA',
     };
+    this.connLines = [];
     (connections ?? []).forEach((c: any) => {
       const a = center(byVar[c.from]);
       const b = center(byVar[c.to]);
       if (!a || !b) return;
-      this.layer.add(new Konva.Line({
+      const line = new Konva.Line({
         points: elbow(a, b),
         stroke: mediumColor[c.medium ?? 'none'] ?? '#90A4AE',
         strokeWidth: c.width ?? 8,
         lineCap: 'round', lineJoin: 'round', listening: false,
-      }) as any);
+      });
+      this.layer.add(line as any);
+      this.connLines.push({ line, conn: c });
     });
   }
 
@@ -648,7 +660,13 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
       const body = node.findOne('.body');
       if (body) body.fill(value ? (props.color ?? '#4CAF50') : (props.offColor ?? '#555'));
     }
-    if (type === 'pump' || type === 'valve') {
+    if (type === 'valve') {
+      // Открыта — заливка цветом; закрыта — прозрачная (как при создании, не тёмная).
+      node.getChildren().forEach((c: any) => {
+        if (c instanceof Konva.Circle) c.fill(value ? (props.color ?? '#FF9800') : 'transparent');
+      });
+    }
+    if (type === 'pump') {
       node.getChildren().forEach((c: any) => {
         if (c instanceof Konva.Circle) c.fill(value ? (props.color ?? '#9C27B0') : '#1A2A3A');
       });
@@ -756,9 +774,17 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     this.steamValveVar = steamEl?.variable ?? null;
 
+    // Группируем связи по среде (для графовой физики)
+    this.mediumConns = { fuel: [], air: [], steam: [], water: [], none: [] };
+    (this.template?.connections ?? []).forEach((c: any) => {
+      const m = c.medium ?? 'none';
+      (this.mediumConns[m] ??= []).push(c);
+    });
+
     this.setAlarmVisual(false);
     this.setSafetyVisual(false);
     this.renderPhysics();
+    this.updateConnectionFlow();
   }
 
   /**
@@ -767,8 +793,15 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   private isHeating(): boolean {
     if (!this.burnerOn) return false;
-    if (!this.fuelControlExists) return true;
-    return this.isFuelOpen();
+    // Графовая логика: если заданы связи топлива/воздуха — требуем доставку по ним;
+    // иначе откат на старую keyword-логику (sim без связей продолжает работать).
+    const fuelOk = (this.mediumConns['fuel']?.length)
+      ? this.mediumDelivered('fuel')
+      : (this.fuelControlExists ? this.isFuelOpen() : true);
+    const airOk = (this.mediumConns['air']?.length)
+      ? this.mediumDelivered('air')
+      : true;
+    return fuelOk && airOk;
   }
 
   /** Открыта ли хотя бы одна задвижка/кран подачи топлива. */
@@ -778,6 +811,61 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
       const isFuel = this.FUEL_KEYS.some(k => hay.includes(k));
       return isFuel && this.variables[el.variable] === true;
     });
+  }
+
+  // ── Графовая физика и подсветка потока ─────────────────────────────────────────
+
+  /** Открыты ли все управляющие концы связи (если их нет — связь считается открытой). */
+  private connControlsOpen(conn: any): boolean {
+    return [conn.from, conn.to]
+      .filter(v => this.isControlVar(v))
+      .every(v => this.variables[v] === true);
+  }
+
+  /** Доходит ли среда до котла: есть хотя бы один открытый путь данной среды. */
+  private mediumDelivered(medium: string): boolean {
+    return (this.mediumConns[medium] ?? []).some(c => this.connControlsOpen(c));
+  }
+
+  /** Активна ли связь (среда идёт) — для подсветки потока. */
+  private connectionActive(conn: any): boolean {
+    const medium = conn.medium ?? 'none';
+    if (medium === 'none') return false;
+    if (!this.connControlsOpen(conn)) return false;
+    if (medium === 'steam') return (this.physicsState['pressure'] ?? 0) > 0.5;
+    return true;   // fuel / air / water: открыт клапан → течёт
+  }
+
+  /** Перекрашивает связи по состоянию потока и запускает/останавливает анимацию пунктира. */
+  private updateConnectionFlow(): void {
+    let anyActive = false;
+    this.connLines.forEach(({ line, conn }) => {
+      const active = this.connectionActive(conn);
+      const hasMedium = conn.medium && conn.medium !== 'none';
+      if (active) {
+        line.opacity(1);
+        line.dash([14, 10]);
+        anyActive = true;
+      } else {
+        line.opacity(hasMedium ? 0.4 : 0.8);
+        line.dash([]);
+        line.dashOffset(0);
+      }
+    });
+    this.layer.batchDraw();
+
+    if (anyActive && !this.flowAnim) {
+      this.flowAnim = new Konva.Animation((frame: any) => {
+        const off = -((frame?.time ?? 0) / 28) % 24;
+        this.connLines.forEach(({ line, conn }) => {
+          if (this.connectionActive(conn)) line.dashOffset(off);
+        });
+      }, this.layer);
+      this.flowAnim.start();
+    } else if (!anyActive && this.flowAnim) {
+      this.flowAnim.stop();
+      this.flowAnim = null;
+    }
   }
 
   /**
@@ -794,6 +882,9 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Рабочая лампа отражает состояние горелки
     this.setWorkLampVisual(this.burnerOn);
+
+    // Поток по связям мог измениться (открыли/закрыли задвижку)
+    this.updateConnectionFlow();
 
     // Состояние подачи топлива тоже могло измениться — запускаем пересчёт
     this.startPhysicsLoop();
@@ -839,6 +930,9 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     // 3. Аварийная защита: предохранительный клапан + сигнализация
     if (this.updateSafety()) allSettled = false;
 
+    // 4. Поток пара зависит от давления — обновляем подсветку связей
+    this.updateConnectionFlow();
+
     this.renderPhysics();
     // Всё устаканилось — цикл больше не нужен (запустится снова при следующем клике/триггере)
     if (allSettled) this.stopPhysicsLoop();
@@ -881,8 +975,9 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     return true;
   }
 
-  /** Открыт ли тракт сброса пара (нет задвижки → считаем открытым). */
+  /** Открыт ли тракт сброса пара (по графу, иначе по задвижке пара, иначе открыт). */
   private isSteamOutletOpen(): boolean {
+    if (this.mediumConns['steam']?.length) return this.mediumDelivered('steam');
     if (!this.steamValveVar) return true;
     return this.variables[this.steamValveVar] === true;
   }
@@ -1041,13 +1136,15 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly ALARM_PENALTY      = 0.5;
   /** Множитель балла при нарушении технологического режима (не вышел на давление / глушил рано). */
   private readonly PROCESS_VIOLATION_FACTOR = 0.5;
+  /** Вычет балла за каждое ошибочное действие (неверный клик). */
+  private readonly ERROR_PENALTY = 1;
 
   /** Было ли нарушение режима (для баннера и заголовка результата). */
   get hasViolation(): boolean { return this.safetyTripped || !this.processOk; }
 
-  /** Итоговый балл с учётом штрафов за аварию и нарушение режима (как считает сервер). */
+  /** Итоговый балл с учётом штрафов за ошибки, аварию и нарушение режима (как считает сервер). */
   get displayScore(): number {
-    let s = this.score;
+    let s = this.score - this.errors * this.ERROR_PENALTY;
     if (this.safetyTripped) s = s * this.SAFETY_TRIP_FACTOR - this.alarmCount * this.ALARM_PENALTY;
     if (!this.processOk)    s = s * this.PROCESS_VIOLATION_FACTOR;
     return Math.round(Math.max(0, s) * 10) / 10;

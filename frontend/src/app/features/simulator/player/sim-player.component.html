@@ -129,7 +129,10 @@
             <ng-container *ngIf="hasViolation">
               {{ displayScore }} из {{ scenario.length }} баллов (штраф за нарушение режима)
             </ng-container>
-            <ng-container *ngIf="!hasViolation">
+            <ng-container *ngIf="!hasViolation && errors > 0">
+              {{ displayScore }} из {{ scenario.length }} баллов (−{{ errors }} за ошибки)
+            </ng-container>
+            <ng-container *ngIf="!hasViolation && errors === 0">
               {{ score }} из {{ scenario.length }} правильных действий
             </ng-container>
           </div>
