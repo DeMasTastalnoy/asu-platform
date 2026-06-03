@@ -56,6 +56,11 @@
             </div>
             <div class="module-actions">
   <button class="btn-sm" (click)="openModule(module)">Открыть</button>
+  <button class="btn-sm btn-sm-outline"
+          *ngIf="user()?.primary_role !== 'student'"
+          [routerLink]="['/courses', course.id, 'modules', module.id, 'edit']">
+    Изменить
+  </button>
 </div>
           </div>
         </div>

@@ -56,6 +56,10 @@ class SimulationTemplateViewSet(viewsets.ModelViewSet):
         if module_id:
             qs = qs.filter(module_id=module_id)
 
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            qs = qs.filter(status=status_param)
+
         return qs
 
     @action(detail=True, methods=["post"], permission_classes=[IsInstructor])

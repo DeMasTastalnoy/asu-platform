@@ -2,7 +2,7 @@
   <div class="topbar">
     <div class="topbar-left">
       <a [routerLink]="['/courses', courseId]" class="back-btn">← Назад к курсу</a>
-      <span class="page-title">Новый модуль</span>
+      <span class="page-title">{{ isEdit ? 'Редактирование модуля' : 'Новый модуль' }}</span>
     </div>
   </div>
 
@@ -45,6 +45,20 @@
                  placeholder="https://..."/>
         </div>
 
+        <div class="field" *ngIf="selectedType === 'simulation'">
+          <label>Привязать симуляцию</label>
+          <select formControlName="simulation" class="select-field">
+            <option value="">Создать новую в конструкторе</option>
+            <option *ngFor="let s of simulations" [value]="s.id">
+              {{ s.name }}{{ s.module ? ' (уже привязана к другому модулю)' : '' }}
+            </option>
+          </select>
+          <div class="field-hint">
+            Выберите уже опубликованную симуляцию или оставьте «Создать новую»,
+            чтобы собрать её в конструкторе после создания модуля.
+          </div>
+        </div>
+
         <div class="field-row">
           <div class="field">
             <label>Порядковый номер</label>
@@ -63,7 +77,7 @@
         <div class="form-actions">
           <a [routerLink]="['/courses', courseId]" class="btn-outline">Отмена</a>
           <button type="submit" class="btn-primary" [disabled]="loading || form.invalid">
-            {{ loading ? 'Создание...' : 'Добавить модуль' }}
+            {{ loading ? 'Сохранение...' : (isEdit ? 'Сохранить изменения' : 'Добавить модуль') }}
           </button>
         </div>
 

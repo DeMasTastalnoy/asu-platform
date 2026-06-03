@@ -130,6 +130,8 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   templateId: string | null = null;
   saving = false;
   saved = false;
+  /** Текущий статус шаблона: опубликован ли он. */
+  published = false;
   user: any;
 
   // Canvas dimensions
@@ -262,11 +264,16 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
 
   drawGrid(layer: Konva.Layer): void {
     const step = 20;
-    for (let x = 0; x <= this.CANVAS_W; x += step) {
-      layer.add(new Konva.Line({ points: [x, 0, x, this.CANVAS_H], stroke: '#e8ecf0', strokeWidth: 0.5 }));
+    // Сетку рисуем с большим запасом за пределами холста, чтобы при
+    // прокрутке/масштабировании поле оставалось разлинованным, а не обрывалось.
+    const margin = 2000;
+    const x0 = -margin, x1 = this.CANVAS_W + margin;
+    const y0 = -margin, y1 = this.CANVAS_H + margin;
+    for (let x = x0; x <= x1; x += step) {
+      layer.add(new Konva.Line({ points: [x, y0, x, y1], stroke: '#e8ecf0', strokeWidth: 0.5 }));
     }
-    for (let y = 0; y <= this.CANVAS_H; y += step) {
-      layer.add(new Konva.Line({ points: [0, y, this.CANVAS_W, y], stroke: '#e8ecf0', strokeWidth: 0.5 }));
+    for (let y = y0; y <= y1; y += step) {
+      layer.add(new Konva.Line({ points: [x0, y, x1, y], stroke: '#e8ecf0', strokeWidth: 0.5 }));
     }
   }
 
@@ -384,7 +391,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     const g = new Konva.Group({ x, y, draggable: true, id: uid });
     const r = Math.min(w, h) / 2;
     g.add(new Konva.Circle({ x: r, y: r, radius: r - 2, fill: props.offColor ?? '#555', stroke: props.color, strokeWidth: 3 }));
-    g.add(new Konva.Text({ x: 0, y: r * 2 + 4, width: w, text: name, fontSize: 10, fill: '#aaa', align: 'center' }));
+    g.add(new Konva.Text({ x: 0, y: r * 2 + 4, width: w, text: name, fontSize: 10, fill: '#ffffff', align: 'center', fontStyle: 'bold' }));
     return g;
   }
 
@@ -392,7 +399,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     const g = new Konva.Group({ x, y, draggable: true, id: uid });
     const r = Math.min(w, h) / 2;
     g.add(new Konva.Circle({ x: r, y: r, radius: r - 2, fill: props.offColor ?? '#333', stroke: props.color, strokeWidth: 2 }));
-    g.add(new Konva.Text({ x: 0, y: r * 2 + 4, width: w, text: name, fontSize: 10, fill: '#aaa', align: 'center' }));
+    g.add(new Konva.Text({ x: 0, y: r * 2 + 4, width: w, text: name, fontSize: 10, fill: '#ffffff', align: 'center', fontStyle: 'bold' }));
     return g;
   }
 
@@ -405,7 +412,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     g.add(new Konva.Circle({ x: w / 2, y: h / 2, radius: w / 2 - 2, fill: '#1A2A3A', stroke: '#4FC3F7', strokeWidth: 2 }));
     g.add(new Konva.Text({ x: 0, y: h / 2 - 10, width: w, text: '0.0', fontSize: 16, fill: '#4FC3F7', align: 'center', fontStyle: 'bold' }));
     g.add(new Konva.Text({ x: 0, y: h / 2 + 8, width: w, text: props.unit ?? '', fontSize: 10, fill: '#607D8B', align: 'center' }));
-    g.add(new Konva.Text({ x: 0, y: h + 4, width: w, text: name, fontSize: 10, fill: '#aaa', align: 'center' }));
+    g.add(new Konva.Text({ x: 0, y: h + 4, width: w, text: name, fontSize: 10, fill: '#ffffff', align: 'center', fontStyle: 'bold' }));
     return g;
   }
 
@@ -421,7 +428,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     g.add(new Konva.Rect({ width: w, height: h - 16, fill: '#1A2A3A', stroke: '#607D8B', strokeWidth: 1, cornerRadius: 4 }));
     g.add(new Konva.Text({ x: 0, y: 8, width: w, text: '0.0', fontSize: 16, fill: '#4FC3F7', align: 'center', fontStyle: 'bold' }));
     g.add(new Konva.Text({ x: 0, y: 28, width: w, text: props.unit ?? '', fontSize: 11, fill: '#607D8B', align: 'center' }));
-    g.add(new Konva.Text({ x: 0, y: h - 14, width: w, text: name, fontSize: 10, fill: '#aaa', align: 'center' }));
+    g.add(new Konva.Text({ x: 0, y: h - 14, width: w, text: name, fontSize: 10, fill: '#ffffff', align: 'center', fontStyle: 'bold' }));
     return g;
   }
 
@@ -431,7 +438,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     g.add(new Konva.Circle({ x: cx, y: cy, radius: r, fill: 'transparent', stroke: props.color ?? '#FF9800', strokeWidth: 2 }));
     g.add(new Konva.Line({ points: [cx - r, cy, cx + r, cy], stroke: props.color ?? '#FF9800', strokeWidth: 2 }));
     g.add(new Konva.Line({ points: [cx, cy - r, cx, cy + r], stroke: props.color ?? '#FF9800', strokeWidth: 2 }));
-    g.add(new Konva.Text({ x: 0, y: h + 2, width: w, text: name, fontSize: 10, fill: '#aaa', align: 'center' }));
+    g.add(new Konva.Text({ x: 0, y: h + 2, width: w, text: name, fontSize: 10, fill: '#ffffff', align: 'center', fontStyle: 'bold' }));
     return g;
   }
 
@@ -440,7 +447,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     const r = Math.min(w, h) / 2 - 2;
     g.add(new Konva.Circle({ x: w / 2, y: h / 2, radius: r, fill: '#1A2A3A', stroke: props.color ?? '#9C27B0', strokeWidth: 2 }));
     g.add(new Konva.RegularPolygon({ x: w / 2, y: h / 2, sides: 3, radius: r - 6, fill: props.color ?? '#9C27B0', rotation: 90 }));
-    g.add(new Konva.Text({ x: 0, y: h + 2, width: w, text: name, fontSize: 10, fill: '#aaa', align: 'center' }));
+    g.add(new Konva.Text({ x: 0, y: h + 2, width: w, text: name, fontSize: 10, fill: '#ffffff', align: 'center', fontStyle: 'bold' }));
     return g;
   }
 
@@ -452,7 +459,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     const g = new Konva.Group({ x, y, draggable: true, id: uid });
     g.add(new Konva.Rect({ width: w, height: h, fill: '#1A2A3A', stroke: '#607D8B', strokeWidth: 1, cornerRadius: 4 }));
     g.add(new Konva.Text({ x: 0, y: h / 2 - 10, width: w, text: icon, fontSize: 18, align: 'center', fill: '#4FC3F7' }));
-    g.add(new Konva.Text({ x: 0, y: h + 2, width: w, text: name, fontSize: 10, fill: '#aaa', align: 'center' }));
+    g.add(new Konva.Text({ x: 0, y: h + 2, width: w, text: name, fontSize: 10, fill: '#ffffff', align: 'center', fontStyle: 'bold' }));
     return g;
   }
 
@@ -671,7 +678,8 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       rules:       this.cleanRules(),
       reference_scenario: this.cleanScenario(),
       library_set: this.activeLibrarySet,
-      status:      'draft',
+      // Сохранение правок не должно снимать публикацию: сохраняем текущий статус.
+      status:      this.published ? 'published' : 'draft',
     };
 
     const req = this.templateId
@@ -690,9 +698,10 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
  publish(): void {
-  if (!this.templateId) return;
+  if (!this.templateId || this.published) return;   // уже опубликована — повторно не публикуем
   this.api.post(`simulations/templates/${this.templateId}/publish/`, {}).subscribe({
     next: () => {
+      this.published = true;
       alert('Симуляция опубликована');
     },
   });
@@ -703,6 +712,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     next: (tmpl) => {
       this.simName        = tmpl.name;
       this.simDescription = tmpl.description ?? '';
+      this.published      = tmpl.status === 'published';
       // Триггеры приводим к типизированному виду (с дефолтами на случай старого формата)
       this.rules = [...(tmpl.rules ?? [])].map((r: any) => ({
         if: {

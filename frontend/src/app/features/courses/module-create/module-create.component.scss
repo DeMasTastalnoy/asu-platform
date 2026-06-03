@@ -24,7 +24,7 @@
     display: block; font-size: 13px; font-weight: 500;
     color: #444; margin-bottom: 6px;
   }
-  input[type=text], input[type=number], textarea {
+  input[type=text], input[type=number], textarea, select {
     width: 100%; padding: 10px 12px;
     border: 1px solid #ddd; border-radius: 8px;
     font-size: 14px; outline: none; transition: border-color 0.2s;
@@ -33,6 +33,14 @@
     &.error { border-color: #e24b4a; }
   }
   textarea { resize: vertical; }
+  select { background: #fff; cursor: pointer; }
+}
+
+.field-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.4;
 }
 
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }

@@ -2,9 +2,15 @@
 
   <!-- Топбар -->
   <div class="topbar">
-    <a routerLink="/courses" class="back-btn">← Курсы</a>
-    <input class="sim-title" [(ngModel)]="simName" placeholder="Название симуляции"/>
+    <a routerLink="/simulator" class="back-btn">← Симуляции</a>
+    <label class="sim-title-field" title="Название симуляции — отображается в списке при привязке к модулю">
+      <span class="sim-title-label">Название:</span>
+      <input class="sim-title" [(ngModel)]="simName" placeholder="Введите название симуляции"/>
+    </label>
     <div class="topbar-right">
+      <span class="status-pill" [class.is-published]="published">
+        {{ published ? '● Опубликовано' : '○ Черновик' }}
+      </span>
       <span class="saved-msg" *ngIf="saved">✓ Сохранено</span>
       <button class="btn-fit" (click)="fitToScreen()" title="По центру">⊡ По центру</button>
       <button class="btn-save" (click)="save()" [disabled]="saving">
@@ -12,9 +18,11 @@
       </button>
       <button class="btn-publish"
         (click)="publish()"
-        [disabled]="!templateId"
-        [title]="!templateId ? 'Сначала сохраните симуляцию' : 'Опубликовать симуляцию'">
-  Опубликовать
+        [disabled]="!templateId || published"
+        [title]="!templateId ? 'Сначала сохраните симуляцию'
+                 : published ? 'Симуляция уже опубликована'
+                 : 'Опубликовать симуляцию'">
+  {{ published ? '✓ Опубликовано' : 'Опубликовать' }}
 </button>
     </div>
   </div>

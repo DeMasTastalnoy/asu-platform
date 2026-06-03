@@ -25,17 +25,28 @@
   &:hover { text-decoration: underline; }
 }
 
+.sim-title-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sim-title-label {
+  font-size: 13px;
+  color: #888;
+  flex-shrink: 0;
+}
 .sim-title {
   flex: 1;
-  border: 1px solid transparent;
+  border: 1px solid #d4dae0;
   border-radius: 6px;
-  padding: 5px 10px;
+  padding: 6px 10px;
   font-size: 15px;
   font-weight: 500;
   color: #222;
-  background: transparent;
+  background: #fff;
   outline: none;
-  &:hover { border-color: #ddd; }
+  &:hover { border-color: #b9c2cb; }
   &:focus { border-color: #185FA5; background: #f9fbff; }
 }
 
@@ -49,6 +60,20 @@
   font-size: 13px;
   color: #3B6D11;
   font-weight: 500;
+}
+
+.status-pill {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 11px;
+  border-radius: 12px;
+  white-space: nowrap;
+  background: #FAEEDA;
+  color: #854F0B;
+  &.is-published {
+    background: #EAF3DE;
+    color: #3B6D11;
+  }
 }
 
 .btn-save {

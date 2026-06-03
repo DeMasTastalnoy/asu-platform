@@ -10,5 +10,6 @@ export const COURSES_ROUTES: Routes = [
   { path: 'create',                     component: CourseCreateComponent },
   { path: ':id',                        component: CourseDetailComponent },
   { path: ':id/modules/create',         component: ModuleCreateComponent },
+  { path: ':id/modules/:moduleId/edit', component: ModuleCreateComponent },
   { path: ':id/modules/:moduleId',      component: ModuleViewComponent   },
 ];
