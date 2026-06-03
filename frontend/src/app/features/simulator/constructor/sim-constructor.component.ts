@@ -335,9 +335,24 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
 
   // ── Canvas elements ─────────────────────────────────────────────────────────
 
-  addElementToCanvas(libEl: LibraryElement, x: number, y: number): void {
-    const props = { ...libEl.default_properties };
-    const uid = `${libEl.type}-${Date.now()}`;
+  /** Монотонный счётчик — гарантирует уникальность id даже при создании пачкой. */
+  private elementSeq = 0;
+
+  /**
+   * Добавляет элемент на холст. При загрузке шаблона передаётся `override`
+   * с сохранёнными id/variable/label/props — тогда элемент восстанавливается
+   * точь-в-точь (а размеры берутся из сохранённых props, а не из библиотеки).
+   */
+  addElementToCanvas(
+    libEl: LibraryElement,
+    x: number,
+    y: number,
+    override?: { id?: string; variable?: string; label?: string; props?: any },
+  ): any {
+    const props = { ...(override?.props ?? libEl.default_properties) };
+    // Date.now() в синхронном цикле даёт одинаковые значения — добавляем счётчик.
+    const uid   = override?.id ?? `${libEl.type}-${Date.now()}-${this.elementSeq++}`;
+    const label = override?.label ?? libEl.name;
     const w = props.width ?? 60;
     const h = props.height ?? 60;
 
@@ -345,38 +360,45 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
 
     switch (libEl.type) {
       case 'button':
-        shape = this.createButton(x, y, w, h, props, uid, libEl.name);
+        shape = this.createButton(x, y, w, h, props, uid, label);
         break;
       case 'lamp':
-        shape = this.createLamp(x, y, w, h, props, uid, libEl.name);
+        shape = this.createLamp(x, y, w, h, props, uid, label);
         break;
       case 'pipe':
         shape = this.createPipe(x, y, w, h, props, uid);
         break;
       case 'gauge':
-        shape = this.createGauge(x, y, w, h, props, uid, libEl.name);
+        shape = this.createGauge(x, y, w, h, props, uid, label);
         break;
       case 'display':
         shape = this.createDisplay(x, y, w, h, props, uid);
         break;
       case 'sensor':
-        shape = this.createSensor(x, y, w, h, props, uid, libEl.name);
+        shape = this.createSensor(x, y, w, h, props, uid, label);
         break;
       case 'valve':
-        shape = this.createValve(x, y, w, h, props, uid, libEl.name);
+        shape = this.createValve(x, y, w, h, props, uid, label);
         break;
       case 'pump':
-        shape = this.createPump(x, y, w, h, props, uid, libEl.name);
+        shape = this.createPump(x, y, w, h, props, uid, label);
         break;
       case 'label':
         shape = this.createLabel(x, y, props, uid);
         break;
       default:
-        shape = this.createGeneric(x, y, w, h, props, uid, libEl.name, libEl.icon);
+        shape = this.createGeneric(x, y, w, h, props, uid, label, libEl.icon);
     }
 
     // Meta
-    shape.setAttrs({ elementId: uid, elementType: libEl.type, variable: uid, label: libEl.name, libId: libEl.id, canvasProps: props });
+    shape.setAttrs({
+      elementId:   uid,
+      elementType: libEl.type,
+      variable:    override?.variable ?? uid,
+      label,
+      libId:       libEl.id,
+      canvasProps: props,
+    });
 
     // Click to select
     shape.on('click', () => this.selectNode(shape));
@@ -384,7 +406,9 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.layer.add(shape as any);
     this.layer.draw();
-    this.selectNode(shape);
+    // При загрузке шаблона (override) элемент не выделяем — иначе выделится последний.
+    if (!override) this.selectNode(shape);
+    return shape;
   }
 
   createButton(x: number, y: number, w: number, h: number, props: any, uid: string, name: string): any {
@@ -509,14 +533,17 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   return this.layer.getChildren()
     .filter(n => !(n instanceof Konva.Transformer))
     .map((n: any) => {
-      const rect = n.getClientRect({ skipTransform: false });
+      const props = n.getAttr('canvasProps') ?? {};
+      const rect  = n.getClientRect({ skipTransform: false });
       return {
         id:       n.getAttr('elementId') ?? n.id(),
         type:     n.getAttr('elementType') ?? 'unknown',
         x:        Math.round(n.x()),
         y:        Math.round(n.y()),
-        width:    Math.round(rect.width),
-        height:   Math.round(rect.height),
+        // Размер тела элемента (без подписи) — из props; getClientRect включает
+        // высоту текста подписи и для построения непригоден.
+        width:    Math.round(props.width  ?? rect.width),
+        height:   Math.round(props.height ?? rect.height),
         variable: n.getAttr('variable') ?? '',
         label:    n.getAttr('label') ?? '',
         props:    n.getAttr('canvasProps') ?? {},
@@ -666,8 +693,8 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       }));
   }
 
-  save(): void {
-    this.saving = true;
+  /** Сохраняет текущее состояние шаблона (POST/PATCH) и возвращает Observable ответа. */
+  private persist() {
     const payload = {
       name:        this.simName,
       description: this.simDescription,
@@ -682,16 +709,32 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       status:      this.published ? 'published' : 'draft',
     };
 
-    const req = this.templateId
+    return this.templateId
       ? this.api.patch<any>(`simulations/templates/${this.templateId}/`, payload)
       : this.api.post<any>('simulations/templates/', payload);
+  }
 
-    req.subscribe({
+  save(): void {
+    this.saving = true;
+    this.persist().subscribe({
       next: (res) => {
         this.saving = false;
         this.saved = true;
         if (!this.templateId) this.templateId = res.id;
         setTimeout(() => this.saved = false, 2000);
+      },
+      error: () => { this.saving = false; },
+    });
+  }
+
+  /** Сохраняет черновик и открывает плеер для проверки (без публикации). */
+  testRun(): void {
+    this.saving = true;
+    this.persist().subscribe({
+      next: (res) => {
+        this.saving = false;
+        if (!this.templateId) this.templateId = res.id;
+        this.router.navigate(['/simulator', this.templateId, 'play'], { queryParams: { test: 1 } });
       },
       error: () => { this.saving = false; },
     });
@@ -751,18 +794,14 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
             icon: '?',
             default_properties: el.props ?? {},
           };
-          this.addElementToCanvas(libEl, el.x, el.y);
-          const node = this.layer.findOne(`#${el.id}`);
-          if (node) {
-            node.setAttrs({
-              elementId: el.id,
-              variable:  el.variable,
-              label:     el.label,
-              canvasProps: el.props,
-            });
-            node.x(el.x);
-            node.y(el.y);
-          }
+          // Восстанавливаем элемент точь-в-точь: id, variable, label и размеры
+          // из сохранённых props (а не из библиотечных дефолтов).
+          this.addElementToCanvas(libEl, el.x, el.y, {
+            id:       el.id,
+            variable: el.variable,
+            label:    el.label,
+            props:    el.props,
+          });
         });
         this.layer.draw();
       }, 200);

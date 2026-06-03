@@ -8,6 +8,7 @@ import Konva from 'konva';
 interface ActionLog {
   ts: string;
   element_id: string;
+  variable?: string;   // имя переменной элемента (для пошаговой оценки на сервере)
   action: string;
   value: any;
   step_index: number;
@@ -40,6 +41,8 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   simulationId: string = '';
   enrollmentId: string | null = null;
+  /** Запущено из конструктора на проверку — «Назад» ведёт обратно в редактор. */
+  testMode = false;
   user: any;
 
   // Состояние переменных симуляции
@@ -78,7 +81,19 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Переменная задвижки сброса пара (null, если её нет в схеме). */
   private steamValveVar: string | null = null;
   private alarmLampNode: any = null;
+  /** Рабочая (не аварийная) лампа — горит, когда горелка запущена. */
+  private workLampNode: any = null;
   private safetyValveNode: any = null;
+
+  // ── Контроль технологического режима ──────────────────────────────────────────
+  /** Рабочее давление, которое котёл обязан набрать для успешного пуска (из props манометра). */
+  private workingPressureMin = 6;
+  /** Глушили ли горелку («Стоп») во время незавершённого сценария — нарушение режима. */
+  prematureStop = false;
+  /** Открыли задвижку пара на недостаточном давлении (холодный пуск) — нарушение режима. */
+  steamOpenedCold = false;
+  /** Пройдён ли процесс «чисто»: пар открыт на рабочем давлении и горелку не глушили рано. */
+  processOk = true;
 
   /** Температура кипения — порог, с которого начинает расти давление пара. */
   private readonly BOIL_TEMP = 100;
@@ -122,6 +137,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.simulationId = this.route.snapshot.paramMap.get('id') ?? '';
     this.enrollmentId = this.route.snapshot.queryParamMap.get('enrollment');
+    this.testMode     = this.route.snapshot.queryParamMap.get('test') === '1';
     this.loadTemplate();
   }
 
@@ -253,8 +269,11 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     const p = el.props ?? {};
   const x = el.x ?? 0;
   const y = el.y ?? 0;
-  const w = Math.max(el.width ?? 60, 20);   // минимум 20px
-  const h = Math.max(el.height ?? 60, 20);  // минимум 20px
+  // Размеры берём из props (истинный размер тела элемента). el.width/height
+  // приходят из getClientRect и включают высоту подписи — использовать их для
+  // построения нельзя, иначе элемент «уезжает» и деформируется.
+  const w = Math.max(p.width ?? el.width ?? 60, 20);   // минимум 20px
+  const h = Math.max(p.height ?? el.height ?? 60, 20);  // минимум 20px
 
     switch (el.type) {
       case 'button': {
@@ -431,6 +450,20 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
       // Вспомогательный орган управления (например, задвижка сброса пара), которого
       // нет в эталонном сценарии. Им можно свободно управлять для регулирования режима —
       // это влияет на физику, но не считается шагом и не штрафуется как ошибка.
+      // Исключение: «Стоп горелки» до завершения пуска — нарушение технологического режима.
+      if (this.isStopControl(el.variable) && this.currentStepIdx < this.scenario.length) {
+        this.prematureStop = true;
+        this.errors++;
+        this.flashNode(node, '#F44336');
+        this.actionLog.push({
+          ts:         new Date().toISOString(),
+          element_id: this.getElementLabel(el.variable),
+          action:     'premature_stop',
+          value:      false,
+          step_index: this.currentStepIdx,
+          ok:         false,
+        });
+      }
       this.applyFreeInteraction(node, el);
     }
     this.layer.draw();
@@ -444,15 +477,25 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.applyRules(el.variable, newVal);
     this.checkBurnerTrigger(el.variable, newVal);
 
+    // Открытие задвижки пара на недостаточном давлении — нарушение режима (холодный пуск).
+    if (el.variable === this.steamValveVar && newVal === true
+        && (this.physicsState['pressure'] ?? 0) < this.workingPressureMin) {
+      this.steamOpenedCold = true;
+    }
+
     this.flashNode(node, '#4CAF50');
     this.actionLog.push({
       ts:         new Date().toISOString(),
       element_id: this.getElementLabel(el.variable),
+      variable:   el.variable,
       action:     'click',
       value:      newVal,
       step_index: this.currentStepIdx,
       ok:         true,
     });
+
+    // Кнопка — без фиксации: после регистрации нажатия возвращаем в исходное.
+    if (el.type === 'button') this.resetMomentary(node, el);
 
     this.score++;
     this.clearHint();
@@ -482,7 +525,9 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Свободный режим (нет reference_scenario). */
   private applyFreeInteraction(node: any, el: any): void {
-    const newVal = !(this.variables[el.variable] ?? false);
+    // Кнопка — моментального действия (импульс), а не переключатель с фиксацией.
+    const isButton = el.type === 'button';
+    const newVal = isButton ? true : !(this.variables[el.variable] ?? false);
     this.variables[el.variable] = newVal;
     this.updateNodeVisual(node, el.type, newVal, el);
     this.applyRules(el.variable, newVal);
@@ -494,7 +539,17 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
       value:      newVal,
       step_index: this.actionLog.length,
     });
+    if (isButton) this.resetMomentary(node, el);
     this.layer.draw();
+  }
+
+  /** Возврат кнопки в отжатое состояние (без записи в лог) — имитация кнопки без фиксации. */
+  private resetMomentary(node: any, el: any): void {
+    setTimeout(() => {
+      this.variables[el.variable] = false;
+      this.updateNodeVisual(node, 'button', false, el);
+      this.layer.draw();
+    }, 250);
   }
 
   /** Кратковременная цветная вспышка поверх элемента. */
@@ -588,7 +643,12 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.safetyTrigger = null;
     this.steamValveVar = null;
     this.alarmLampNode = null;
+    this.workLampNode = null;
     this.safetyValveNode = null;
+    this.workingPressureMin = 6;
+    this.prematureStop = false;
+    this.steamOpenedCold = false;
+    this.processOk = true;
     const indicatorTypes = ['gauge', 'sensor', 'display', 'level'];
 
     this.layer.find('Group').forEach((g: any) => {
@@ -600,8 +660,12 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         this.safetyValveNode = g;
         this.safetyTrigger = (g.getAttr('canvasProps') ?? {}).triggerPressure ?? 14;
       }
-      if (type === 'lamp' && this.ALARM_KEYS.some(k => hay.includes(k))) {
-        this.alarmLampNode = g;
+      if (type === 'lamp') {
+        if (this.ALARM_KEYS.some(k => hay.includes(k))) {
+          this.alarmLampNode = g;            // лампа аварии
+        } else if (!this.workLampNode) {
+          this.workLampNode = g;             // первая «рабочая» лампа — индикация горелки
+        }
       }
 
       if (!indicatorTypes.includes(type)) return;
@@ -619,6 +683,12 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
 
       const valueText = g.findOne('.value');
       this.physicsTargets.push({ group: g, valueText, quantity });
+
+      // Рабочий порог давления берём из манометра (normalMin), если задан
+      if (quantity === 'pressure') {
+        const nm = (g.getAttr('canvasProps') ?? {}).normalMin;
+        if (typeof nm === 'number') this.workingPressureMin = nm;
+      }
     });
 
     // Температура всегда нужна (от неё зависит давление), даже без термометра на схеме
@@ -674,8 +744,17 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     if (isStart && value) this.burnerOn = true;
     else if (isStop)      this.burnerOn = false;
 
+    // Рабочая лампа отражает состояние горелки
+    this.setWorkLampVisual(this.burnerOn);
+
     // Состояние подачи топлива тоже могло измениться — запускаем пересчёт
     this.startPhysicsLoop();
+  }
+
+  /** Является ли орган управления кнопкой «Стоп/глушение горелки». */
+  private isStopControl(variable: string): boolean {
+    const hay = `${variable ?? ''} ${this.getElementLabel(variable)}`.toLowerCase();
+    return ['burner_stop', 'stop', 'стоп', 'глуш', 'отключ', 'останов'].some(k => hay.includes(k));
   }
 
   private startPhysicsLoop(): void {
@@ -729,7 +808,13 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     const t    = this.physicsState['temperature'];
     const frac = Math.max(0, (t - this.BOIL_TEMP) / (tMax - this.BOIL_TEMP));
 
-    let target = frac * (this.isSteamOutletOpen() ? this.WORK_PRESSURE : this.OVER_PRESSURE);
+    // Давление растёт только при активном нагреве: горелка генерирует пар.
+    // Без нагрева пар не вырабатывается — давление спадает независимо от того,
+    // открыта задвижка пара или нет (это и позволяет штатно заглушить котёл).
+    const base = !heating
+      ? 0
+      : (this.isSteamOutletOpen() ? this.WORK_PRESSURE : this.OVER_PRESSURE);
+    let target = frac * base;
     // Стравливание предохранительным клапаном
     if (this.safetyOpen && this.safetyTrigger != null) {
       target = Math.min(target, this.safetyTrigger - 2);
@@ -798,6 +883,14 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     body.fill(on ? (props.color ?? '#F44336') : (props.offColor ?? '#333'));
   }
 
+  /** Подсветка рабочей лампы (горелка работает). */
+  private setWorkLampVisual(on: boolean): void {
+    const body = this.workLampNode?.findOne?.('.body');
+    if (!body) return;
+    const props = this.workLampNode.getAttr('canvasProps') ?? {};
+    body.fill(on ? (props.color ?? '#4CAF50') : (props.offColor ?? '#333'));
+  }
+
   /** Визуализация срабатывания предохранительного клапана (струя сброса). */
   private setSafetyVisual(open: boolean): void {
     const node = this.safetyValveNode;
@@ -833,6 +926,11 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   // ── Завершение ───────────────────────────────────────────────────────────────
 
   finishSimulation(): void {
+    // Технологический режим пройден «чисто», если задвижку пара открыли на рабочем
+    // давлении и горелку не глушили вне процедуры. Проверка по моменту открытия пара —
+    // чтобы штатный останов (с падением давления в конце) не считался нарушением.
+    this.processOk = !this.steamOpenedCold && !this.prematureStop;
+
     // completed: нет сценария (свободный режим) ИЛИ все шаги пройдены
     this.completionStatus = (!this.scenarioMode || this.currentStepIdx >= this.scenario.length)
       ? 'completed'
@@ -846,6 +944,9 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   submitResults(): void {
+    // Тест-прогон из конструктора не сохраняем — это проверка, а не попытка студента.
+    if (this.testMode) { this.submitting = false; return; }
+
     this.submitting = true;
     const payload: any = {
       simulation_id:  +this.simulationId,
@@ -855,6 +956,7 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
       completed:      this.completionStatus === 'completed',
       safety_tripped: this.safetyTripped,
       alarm_count:    this.alarmCount,
+      process_ok:     this.processOk,
     };
     if (this.enrollmentId) payload.enrollment_id = +this.enrollmentId;
 
@@ -889,12 +991,18 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   // при срабатывании защиты балл умножается на коэффициент и за каждую аварию вычитается фикс.
   private readonly SAFETY_TRIP_FACTOR = 0.5;
   private readonly ALARM_PENALTY      = 0.5;
+  /** Множитель балла при нарушении технологического режима (не вышел на давление / глушил рано). */
+  private readonly PROCESS_VIOLATION_FACTOR = 0.5;
 
-  /** Итоговый балл с учётом штрафа за аварию (как считает сервер). */
+  /** Было ли нарушение режима (для баннера и заголовка результата). */
+  get hasViolation(): boolean { return this.safetyTripped || !this.processOk; }
+
+  /** Итоговый балл с учётом штрафов за аварию и нарушение режима (как считает сервер). */
   get displayScore(): number {
-    if (!this.safetyTripped) return this.score;
-    const penalized = Math.max(0, this.score * this.SAFETY_TRIP_FACTOR - this.alarmCount * this.ALARM_PENALTY);
-    return Math.round(penalized * 10) / 10;
+    let s = this.score;
+    if (this.safetyTripped) s = s * this.SAFETY_TRIP_FACTOR - this.alarmCount * this.ALARM_PENALTY;
+    if (!this.processOk)    s = s * this.PROCESS_VIOLATION_FACTOR;
+    return Math.round(Math.max(0, s) * 10) / 10;
   }
 
   /** Итоговый процент с учётом штрафа (знаменатель — число шагов сценария). */

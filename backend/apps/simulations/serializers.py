@@ -50,8 +50,9 @@ class SimulationSubmitSerializer(serializers.Serializer):
     """Сохранение лога действий студента и автоматическая оценка."""
 
     # Штрафы за нарушение режима эксплуатации
-    SAFETY_TRIP_FACTOR = 0.5   # балл умножается на коэффициент при срабатывании защиты
-    ALARM_PENALTY      = 0.5   # дополнительный вычет за каждую аварию
+    SAFETY_TRIP_FACTOR    = 0.5   # балл умножается на коэффициент при срабатывании защиты
+    ALARM_PENALTY         = 0.5   # дополнительный вычет за каждую аварию
+    PROCESS_VIOLATION_FACTOR = 0.5  # множитель при нарушении технологического режима пуска
 
     simulation_id  = serializers.IntegerField()
     enrollment_id  = serializers.IntegerField(required=False, allow_null=True)
@@ -61,6 +62,8 @@ class SimulationSubmitSerializer(serializers.Serializer):
     completed      = serializers.BooleanField(required=False, default=True)
     safety_tripped = serializers.BooleanField(required=False, default=False)
     alarm_count    = serializers.IntegerField(required=False, default=0)
+    # Технологический режим пройден «чисто» (вышли на рабочее давление, не глушили рано)
+    process_ok     = serializers.BooleanField(required=False, default=True)
 
     def validate(self, attrs):
         from apps.courses.models import Enrollment
@@ -109,6 +112,18 @@ class SimulationSubmitSerializer(serializers.Serializer):
             })
             score = round(penalized, 2)
 
+        # Штраф за нарушение технологического режима пуска (не вышел на рабочее давление
+        # или горелку заглушили раньше времени)
+        process_ok = self.validated_data.get("process_ok", True)
+        if not process_ok and score is not None:
+            penalized = max(0.0, score * self.PROCESS_VIOLATION_FACTOR)
+            deviations.append({
+                "type":    "process",
+                "detail":  "Нарушение технологического режима — котёл не выведен на рабочее давление",
+                "penalty": round(score - penalized, 2),
+            })
+            score = round(penalized, 2)
+
         result = SimulationResult.objects.create(
             simulation=sim,
             enrollment=enrollment,
@@ -132,40 +147,54 @@ class SimulationSubmitSerializer(serializers.Serializer):
     def _evaluate(self, actions, reference, elements=None):
         """Сравнение действий студента с эталонным сценарием.
 
-        Шаги, нацеленные на индикаторы (манометр, уровнемер, дисплей и т.п.),
-        в оценке не участвуют — клик по ним не несёт смысловой нагрузки.
+        Оценка пошаговая (по порядку): один и тот же элемент может встречаться
+        в нескольких шагах (открыть → закрыть), поэтому сопоставляем действия с
+        шагами по индексу шага, а не по элементу. Шаги, нацеленные на индикаторы
+        (манометр, уровнемер и т.п.), в оценке не участвуют.
         """
         if not reference:
             return [], None, None
 
         # Тип элемента по его variable (element_id в сценарии == variable элемента)
         type_by_var = {e.get("variable"): e.get("type") for e in (elements or [])}
-        reference = [
-            s for s in reference
+
+        # Сохраняем исходные индексы шагов — клиент логирует step_index по полному сценарию.
+        control_steps = [
+            (i, s) for i, s in enumerate(reference)
             if type_by_var.get(s.get("element_id")) in self.CONTROL_TYPES
         ]
-        if not reference:
+        if not control_steps:
             return [], None, None
 
-        max_score  = len(reference)
+        max_score  = len(control_steps)
         score      = 0
         deviations = []
 
-        actions_map = {a.get("element_id"): a for a in actions}
+        # Правильные клики, индексированные по номеру шага.
+        by_step = {
+            a.get("step_index"): a
+            for a in actions
+            if a.get("ok") and a.get("step_index") is not None
+        }
 
-        for step in reference:
-            step_num   = step.get("step")
+        for orig_i, step in control_steps:
             element_id = step.get("element_id")
             expected   = step.get("expected_value")
-            actual_action = actions_map.get(element_id)
+            act        = by_step.get(orig_i)
 
-            if actual_action and actual_action.get("value") == expected:
+            # variable добавлен в лог недавно; для старых логов считаем его совпавшим.
+            matched = (
+                act is not None
+                and act.get("variable", element_id) == element_id
+                and act.get("value") == expected
+            )
+            if matched:
                 score += 1
             else:
                 deviations.append({
-                    "step":     step_num,
+                    "step":     step.get("step"),
                     "expected": element_id,
-                    "actual":   actual_action.get("element_id") if actual_action else None,
+                    "actual":   act.get("variable") if act else None,
                     "penalty":  1,
                 })
 

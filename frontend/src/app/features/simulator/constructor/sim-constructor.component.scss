@@ -89,6 +89,20 @@
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
+.btn-test {
+  padding: 7px 16px;
+  background: #fff;
+  color: #185FA5;
+  border: 1px solid #cdddee;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  &:hover:not(:disabled) { background: #EBF4FF; border-color: #185FA5; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
 .workspace {
   flex: 1;
   display: flex;

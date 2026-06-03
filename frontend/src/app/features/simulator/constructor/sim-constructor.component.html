@@ -16,6 +16,10 @@
       <button class="btn-save" (click)="save()" [disabled]="saving">
         {{ saving ? 'Сохранение...' : 'Сохранить' }}
       </button>
+      <button class="btn-test" (click)="testRun()" [disabled]="saving"
+              title="Сохранить черновик и открыть в плеере для проверки">
+        ▶ Проверить
+      </button>
       <button class="btn-publish"
         (click)="publish()"
         [disabled]="!templateId || published"

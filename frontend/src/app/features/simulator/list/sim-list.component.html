@@ -1,0 +1,47 @@
+<div class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="page-title">Симуляции</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-primary" (click)="createNew()">+ Создать симуляцию</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка...</div>
+    <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="!loading">
+      <div class="empty" *ngIf="templates.length === 0">
+        <p>Пока нет ни одной симуляции.</p>
+        <button class="btn-primary" (click)="createNew()">Создать первую симуляцию</button>
+      </div>
+
+      <div class="sim-list" *ngIf="templates.length > 0">
+        <div class="sim-item" *ngFor="let t of templates">
+          <div class="sim-main">
+            <div class="sim-name">{{ t.name }}</div>
+            <div class="sim-meta">
+              <span class="sim-lib">{{ libraryLabel(t.library_set) }}</span>
+              <span class="sim-dot">·</span>
+              <span class="sim-bind" [class.bound]="t.module">
+                {{ t.module ? 'Привязана к модулю' : 'Не привязана' }}
+              </span>
+            </div>
+          </div>
+
+          <span class="status-pill" [class.is-published]="t.status === 'published'">
+            {{ t.status === 'published' ? '● Опубликовано' : '○ Черновик' }}
+          </span>
+
+          <div class="sim-actions">
+            <button class="btn-sm" (click)="open(t)">Открыть</button>
+            <button class="btn-sm btn-sm-outline" (click)="edit(t)">Редактировать</button>
+            <button class="btn-sm btn-sm-danger" (click)="remove(t)" title="Удалить">✕</button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>
