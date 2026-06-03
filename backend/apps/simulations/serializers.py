@@ -16,7 +16,8 @@ class SimulationTemplateSerializer(serializers.ModelSerializer):
         fields = (
             "id", "module", "name", "description", "author_name",
             "canvas_w", "canvas_h", "elements", "rules",
-            "reference_scenario", "status", "library_set", "created_at", "updated_at",
+            "reference_scenario", "connections", "status", "library_set",
+            "created_at", "updated_at",
         )
         read_only_fields = ("id", "author_name", "created_at", "updated_at")
 

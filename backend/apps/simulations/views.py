@@ -84,6 +84,7 @@ class SimulationTemplateViewSet(viewsets.ModelViewSet):
             elements           = template.elements,
             rules              = template.rules,
             reference_scenario = template.reference_scenario,
+            connections        = template.connections,
             status             = SimulationTemplate.Status.DRAFT,
         )
         serializer = SimulationTemplateSerializer(new_template, context={"request": request})

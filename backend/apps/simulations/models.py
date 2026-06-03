@@ -72,6 +72,10 @@ class SimulationTemplate(models.Model):
     # [{"step":1,"element_id":"btn-01","action":"click","expected_value":true,"timeout_sec":30}, ...]
     reference_scenario = models.JSONField("Эталонный сценарий", default=list, blank=True)
 
+    # connections: связи (трубы/провода) между элементами по их variable
+    # [{"from":"valve_fuel","to":"boiler"}, ...]
+    connections = models.JSONField("Связи между элементами", default=list, blank=True)
+
     library_set = models.CharField(
         "Библиотека АСУ", max_length=50, default='universal',
     )

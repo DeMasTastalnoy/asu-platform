@@ -176,6 +176,8 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.layer = new Konva.Layer();
     this.stage.add(this.layer);
 
+    // Связи рисуем первыми, чтобы они были под элементами
+    this.drawConnections(this.template.connections ?? [], this.template.elements ?? []);
     // Восстанавливаем элементы из JSON
     this.restoreElements(this.template.elements ?? []);
     this.layer.draw();
@@ -240,6 +242,28 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+
+  /** Рисует связи (трубы) между элементами по их variable. Вызывается до элементов. */
+  private drawConnections(connections: any[], elements: any[]): void {
+    const byVar: Record<string, any> = {};
+    elements.forEach((el: any) => { byVar[el.variable] = el; });
+    const center = (el: any) => {
+      if (!el) return null;
+      const p = el.props ?? {};
+      const w = p.width ?? el.width ?? 60;
+      const h = p.height ?? el.height ?? 60;
+      return { x: (el.x ?? 0) + w / 2, y: (el.y ?? 0) + h / 2 };
+    };
+    (connections ?? []).forEach((c: any) => {
+      const a = center(byVar[c.from]);
+      const b = center(byVar[c.to]);
+      if (!a || !b) return;
+      this.layer.add(new Konva.Line({
+        points: [a.x, a.y, b.x, b.y],
+        stroke: '#90A4AE', strokeWidth: 4, lineCap: 'round', listening: false,
+      }) as any);
+    });
+  }
 
   restoreElements(elements: any[]): void {
     elements.forEach(el => {

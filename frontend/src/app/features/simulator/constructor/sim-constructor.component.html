@@ -174,6 +174,7 @@
       <div class="logic-tabs">
         <button class="logic-tab" [class.active]="logicTab === 'scenario'" (click)="logicTab = 'scenario'">Сценарий</button>
         <button class="logic-tab" [class.active]="logicTab === 'rules'" (click)="logicTab = 'rules'">Триггеры</button>
+        <button class="logic-tab" [class.active]="logicTab === 'connections'" (click)="logicTab = 'connections'">Связи</button>
       </div>
 
       <!-- ВКЛАДКА: СЦЕНАРИЙ -->
@@ -286,6 +287,34 @@
             </div>
 
             <button class="rule-add-action" (click)="addAction(rule)">+ ещё действие</button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- ВКЛАДКА: СВЯЗИ -->
+      <ng-container *ngIf="logicTab === 'connections'">
+        <div class="scn-hint">
+          Включите режим связывания и кликните по двум элементам — между ними протянется труба.
+          Связь тянется за элементами при перемещении.
+        </div>
+
+        <button class="conn-mode-btn" [class.active]="connectMode" (click)="toggleConnectMode()">
+          {{ connectMode ? '✓ Режим связывания включён (выкл.)' : '🔗 Включить режим связывания' }}
+        </button>
+
+        <div class="conn-picking" *ngIf="connectMode">
+          <ng-container *ngIf="connectFrom">Источник: <b>{{ varLabel(connectFrom) }}</b> — выберите второй элемент.</ng-container>
+          <ng-container *ngIf="!connectFrom">Кликните по первому элементу.</ng-container>
+        </div>
+
+        <div class="scn-empty" *ngIf="connections.length === 0">
+          Связей пока нет.
+        </div>
+
+        <div class="scn-list">
+          <div class="conn-item" *ngFor="let c of connections; let i = index">
+            <span class="conn-text">{{ varLabel(c.from) }} ↔ {{ varLabel(c.to) }}</span>
+            <button class="scn-icon scn-icon-del" (click)="removeConnection(i)" title="Удалить связь">✕</button>
           </div>
         </div>
       </ng-container>

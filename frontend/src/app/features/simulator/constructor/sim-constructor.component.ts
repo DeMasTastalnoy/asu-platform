@@ -47,6 +47,12 @@ interface Rule {
   then: RuleAction[];
 }
 
+/** Связь (труба/провод) между двумя элементами по их variable. */
+interface Connection {
+  from: string;
+  to:   string;
+}
+
 @Component({
   selector: 'app-sim-constructor',
   standalone: true,
@@ -120,8 +126,14 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
   newStepVar = '';
   /** Триггеры (правила) шаблона — редактируются и сохраняются. */
   rules: Rule[] = [];
+  /** Связи (трубы) между элементами. */
+  connections: Connection[] = [];
+  /** Включён ли режим связывания (клик по двум элементам создаёт связь). */
+  connectMode = false;
+  /** Первый выбранный элемент в режиме связывания (variable). */
+  connectFrom: string | null = null;
   /** Активная вкладка правой панели логики. */
-  logicTab: 'scenario' | 'rules' = 'scenario';
+  logicTab: 'scenario' | 'rules' | 'connections' = 'scenario';
 
   // Simulation meta
   simName = 'Новая симуляция';
@@ -190,6 +202,9 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       },
     });
     this.layer.add(this.transformer);
+
+    // Растягивание рамкой → пересчёт масштаба в размеры (props), затем перерисовка
+    this.transformer.on('transformend', () => this.applyTransform());
 
     // Click on empty → deselect
     this.stage.on('click', (e) => {
@@ -400,8 +415,10 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       canvasProps: props,
     });
 
-    // Click to select
-    shape.on('click', () => this.selectNode(shape));
+    // Click: выбор элемента или подбор конца связи (в режиме связывания)
+    shape.on('click', () => this.onElementClicked(shape));
+    // Перемещение — связи тянутся за элементом
+    shape.on('dragmove', () => this.redrawConnections());
     shape.on('dragend', () => this.layer.draw());
 
     this.layer.add(shape as any);
@@ -533,6 +550,26 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
     this.rebuildSelected();
   }
 
+  /** После растягивания рамкой переводит масштаб ноды в размеры (props) и перерисовывает. */
+  private applyTransform(): void {
+    const node = this.selectedNode;
+    if (!node) return;
+    const sx = node.scaleX();
+    const sy = node.scaleY();
+    if (sx === 1 && sy === 1) return;
+
+    const props = { ...(node.getAttr('canvasProps') ?? {}) };
+    props.width  = Math.max(4, Math.round((props.width  ?? 60) * sx));
+    props.height = Math.max(4, Math.round((props.height ?? 60) * sy));
+    node.setAttr('canvasProps', props);
+    if (this.selectedElement) this.selectedElement.props = props;
+
+    // Масштаб «впечатан» в размеры — сбрасываем его и пересоздаём ноду чисто.
+    node.scaleX(1);
+    node.scaleY(1);
+    this.rebuildSelected();
+  }
+
   /** Пересоздаёт выбранную ноду из её текущих props (id/variable/label/позиция сохраняются). */
   private rebuildSelected(): void {
     const node = this.selectedNode;
@@ -556,14 +593,21 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
 
     const newNode = this.addElementToCanvas(libEl, x, y, { id, variable, label, props });
     this.selectNode(newNode);
+    this.redrawConnections();   // размер/центр мог измениться — обновить линии
   }
 
   deleteSelected(): void {
     if (!this.selectedNode) return;
+    const variable = this.selectedNode.getAttr('variable');
     this.transformer.nodes([]);
     this.selectedNode.destroy();
     this.selectedNode = null;
     this.selectedElement = null;
+    // Удаляем связи, ссылающиеся на удалённый элемент
+    if (variable) {
+      this.connections = this.connections.filter(c => c.from !== variable && c.to !== variable);
+    }
+    this.redrawConnections();
     this.layer.draw();
   }
 
@@ -571,7 +615,8 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
 
   getCanvasElements(): CanvasElement[] {
   return this.layer.getChildren()
-    .filter(n => !(n instanceof Konva.Transformer))
+    // исключаем трансформер и линии связей — это не элементы холста
+    .filter(n => !(n instanceof Konva.Transformer) && n.name() !== 'connection')
     .map((n: any) => {
       const props = n.getAttr('canvasProps') ?? {};
       const rect  = n.getClientRect({ skipTransform: false });
@@ -733,6 +778,88 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       }));
   }
 
+  // ── Связи (трубы между элементами) ─────────────────────────────────────────────
+
+  /** Клик по элементу: выбор или подбор конца связи в режиме связывания. */
+  private onElementClicked(node: any): void {
+    if (this.connectMode) { this.pickConnectionEndpoint(node); return; }
+    this.selectNode(node);
+  }
+
+  toggleConnectMode(): void {
+    this.connectMode = !this.connectMode;
+    this.connectFrom = null;
+    if (this.connectMode) {
+      // В режиме связывания снимаем выделение, чтобы не мешал трансформер.
+      this.transformer.nodes([]);
+      this.selectedNode = null;
+      this.selectedElement = null;
+      this.layer.draw();
+    }
+  }
+
+  private pickConnectionEndpoint(node: any): void {
+    const v = node.getAttr('variable');
+    if (!v) return;
+    if (!this.connectFrom) {
+      this.connectFrom = v;                 // выбран источник
+    } else if (this.connectFrom === v) {
+      this.connectFrom = null;              // клик по тому же — отмена
+    } else {
+      this.addConnection(this.connectFrom, v);
+      this.connectFrom = null;
+    }
+  }
+
+  private addConnection(from: string, to: string): void {
+    const exists = this.connections.some(c =>
+      (c.from === from && c.to === to) || (c.from === to && c.to === from));
+    if (!exists) this.connections.push({ from, to });
+    this.redrawConnections();
+  }
+
+  removeConnection(i: number): void {
+    this.connections.splice(i, 1);
+    this.redrawConnections();
+  }
+
+  /** Центр элемента по его variable (для концов линии связи). */
+  private elementCenter(variable: string): { x: number; y: number } | null {
+    const node = this.layer.getChildren().find((n: any) =>
+      !(n instanceof Konva.Transformer) && n.getAttr('variable') === variable) as any;
+    if (!node) return null;
+    const p = node.getAttr('canvasProps') ?? {};
+    const w = p.width ?? 60, h = p.height ?? 60;
+    return { x: node.x() + w / 2, y: node.y() + h / 2 };
+  }
+
+  /** Перерисовывает все линии связей (под элементами). */
+  private redrawConnections(): void {
+    if (!this.layer) return;
+    this.layer.find('.connection').forEach((l: any) => l.destroy());
+    this.connections.forEach(c => {
+      const a = this.elementCenter(c.from);
+      const b = this.elementCenter(c.to);
+      if (!a || !b) return;
+      const line = new Konva.Line({
+        points: [a.x, a.y, b.x, b.y],
+        stroke: '#90A4AE', strokeWidth: 4, lineCap: 'round',
+        name: 'connection', listening: false,
+      });
+      this.layer.add(line);
+      line.moveToBottom();
+    });
+    this.layer.batchDraw();
+  }
+
+  /** Чистый массив связей для сохранения (только с существующими элементами). */
+  private cleanConnections(): Connection[] {
+    const vars = new Set(this.allElements().map(e => e.variable));
+    return this.connections
+      .filter(c => vars.has(c.from) && vars.has(c.to))
+      .map(c => ({ from: c.from, to: c.to }));
+  }
+
   /** Сохраняет текущее состояние шаблона (POST/PATCH) и возвращает Observable ответа. */
   private persist() {
     const payload = {
@@ -744,6 +871,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
       elements:    this.getCanvasElements(),
       rules:       this.cleanRules(),
       reference_scenario: this.cleanScenario(),
+      connections: this.cleanConnections(),
       library_set: this.activeLibrarySet,
       // Сохранение правок не должно снимать публикацию: сохраняем текущий статус.
       status:      this.published ? 'published' : 'draft',
@@ -816,6 +944,9 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
           expected_value: s.expected_value ?? true,
           description:    s.description ?? s.hint ?? '',
         }));
+      this.connections = [...(tmpl.connections ?? [])]
+        .filter((c: any) => c?.from && c?.to)
+        .map((c: any) => ({ from: c.from, to: c.to }));
       if (!this.moduleId && tmpl.module) {
         this.moduleId = String(tmpl.module);
       }
@@ -843,6 +974,7 @@ export class SimConstructorComponent implements OnInit, AfterViewInit, OnDestroy
             props:    el.props,
           });
         });
+        this.redrawConnections();
         this.layer.draw();
       }, 200);
     },
