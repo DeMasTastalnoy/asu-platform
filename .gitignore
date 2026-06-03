@@ -1,0 +1,36 @@
+# ── Python / Django ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+*.sqlite3
+*.log
+
+# Секреты / окружение
+.env
+*.env
+!.env.example
+
+# ── Node / Angular ────────────────────────────────────────────
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log*
+
+# ── IDE / редакторы ───────────────────────────────────────────
+.idea/
+.vscode/
+
+# ── ОС ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Claude Code (локальные настройки инструмента) ─────────────
+.claude/
+
+# ── Временные бэкапы данных ───────────────────────────────────
+backend/dkvr_template3_backup.json
