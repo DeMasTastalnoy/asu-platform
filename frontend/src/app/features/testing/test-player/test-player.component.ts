@@ -47,7 +47,15 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.moduleId = this.route.snapshot.paramMap.get('moduleId') ?? '';
-    this.loadQuestions();
+    // Сначала настройки (лимит времени, перемешивание), затем вопросы.
+    this.api.get<any>(`modules/${this.moduleId}/`).subscribe({
+      next: m => {
+        this.settings = m.test_settings ?? null;
+        this.timeLimit = this.settings?.time_limit_sec ?? 0;
+        this.loadQuestions();
+      },
+      error: () => this.loadQuestions(),
+    });
   }
 
   ngOnDestroy(): void {
@@ -58,12 +66,21 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
     this.api.get<any>(`questions/?module_id=${this.moduleId}`).subscribe({
       next: data => {
         const list = Array.isArray(data) ? data : data.results ?? [];
-        this.questions = list;
+        this.questions = this.settings?.shuffle_questions ? this.shuffle(list) : list;
         this.loading = false;
         this.startTimer();
       },
       error: () => { this.loading = false; this.error = 'Не удалось загрузить тест.'; },
     });
+  }
+
+  private shuffle<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
   }
 
   startTimer(): void {

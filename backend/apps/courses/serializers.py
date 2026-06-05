@@ -70,6 +70,16 @@ class CourseModuleCreateSerializer(serializers.ModelSerializer):
             TestSettings.objects.create(module=module, **test_settings_data)
         return module
 
+    def update(self, instance, validated_data):
+        test_settings_data = validated_data.pop("test_settings", None)
+        module = super().update(instance, validated_data)
+        # Настройки теста сохраняем только если переданы (чтобы не затереть при обычном PATCH).
+        if test_settings_data is not None and module.type == CourseModule.Type.TEST:
+            TestSettings.objects.update_or_create(
+                module=module, defaults=test_settings_data,
+            )
+        return module
+
 
 class CourseListSerializer(serializers.ModelSerializer):
     instructor_name = serializers.CharField(source="instructor.full_name", read_only=True)

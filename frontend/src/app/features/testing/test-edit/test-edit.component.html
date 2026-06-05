@@ -17,6 +17,28 @@
     <div class="error-msg" *ngIf="error">{{ error }}</div>
 
     <ng-container *ngIf="!loading">
+      <!-- Настройки теста -->
+      <div class="settings-card">
+        <div class="settings-title">Настройки теста</div>
+        <div class="settings-grid">
+          <label class="set-field">Лимит времени, мин <span class="set-hint">(0 = без лимита)</span>
+            <input type="number" min="0" max="600" [(ngModel)]="settings.timeLimitMin"/>
+          </label>
+          <label class="set-field">Макс. попыток
+            <input type="number" min="1" max="20" [(ngModel)]="settings.maxAttempts"/>
+          </label>
+          <label class="set-field">Проходной балл, %
+            <input type="number" min="0" max="100" [(ngModel)]="settings.passingScore"/>
+          </label>
+          <label class="set-check">
+            <input type="checkbox" [(ngModel)]="settings.shuffle"/> Перемешивать вопросы
+          </label>
+          <label class="set-check">
+            <input type="checkbox" [(ngModel)]="settings.showAnswers"/> Показывать ответы после
+          </label>
+        </div>
+      </div>
+
       <div class="empty" *ngIf="questions.length === 0">
         Вопросов пока нет. Добавьте первый вопрос.
       </div>

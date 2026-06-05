@@ -32,6 +32,15 @@ export class TestEditComponent implements OnInit {
   saved   = false;
   error   = '';
 
+  /** Настройки теста (редактируются вместе с вопросами). */
+  settings = {
+    timeLimitMin: 0,        // 0 = без лимита
+    maxAttempts:  3,
+    passingScore: 60,
+    shuffle:      false,
+    showAnswers:  true,
+  };
+
   readonly TYPES = [
     { value: 'single',   label: 'Одиночный выбор' },
     { value: 'multiple', label: 'Множественный выбор' },
@@ -47,7 +56,19 @@ export class TestEditComponent implements OnInit {
   ngOnInit(): void {
     this.moduleId = this.route.snapshot.paramMap.get('moduleId') ?? '';
     this.api.get<any>(`modules/${this.moduleId}/`).subscribe({
-      next: m => { this.moduleTitle = m.title; },
+      next: m => {
+        this.moduleTitle = m.title;
+        const s = m.test_settings;
+        if (s) {
+          this.settings = {
+            timeLimitMin: s.time_limit_sec ? Math.round(s.time_limit_sec / 60) : 0,
+            maxAttempts:  s.max_attempts ?? 3,
+            passingScore: Number(s.passing_score ?? 60),
+            shuffle:      !!s.shuffle_questions,
+            showAnswers:  s.show_answers_after !== false,
+          };
+        }
+      },
     });
     this.api.get<any>(`questions/?module_id=${this.moduleId}`).subscribe({
       next: data => {
@@ -139,7 +160,8 @@ export class TestEditComponent implements OnInit {
   }
 
   get allValid(): boolean {
-    return this.questions.length > 0 && this.questions.every(q => this.questionValid(q));
+    // Пустой тест сохранять можно (например, только настройки) — пройти его всё равно нельзя.
+    return this.questions.every(q => this.questionValid(q));
   }
 
   private letter(i: number): string { return String.fromCharCode(97 + i); }
@@ -172,7 +194,16 @@ export class TestEditComponent implements OnInit {
     this.saving = true;
     this.error = '';
 
+    const test_settings = {
+      time_limit_sec:     this.settings.timeLimitMin > 0 ? this.settings.timeLimitMin * 60 : null,
+      max_attempts:       this.settings.maxAttempts || 1,
+      passing_score:      this.settings.passingScore,
+      shuffle_questions:  this.settings.shuffle,
+      show_answers_after: this.settings.showAnswers,
+    };
+
     const ops = [
+      this.api.patch(`modules/${this.moduleId}/`, { test_settings }),
       ...this.questions.map((q, i) => {
         const payload = this.toApi(q, i);
         return q.id
