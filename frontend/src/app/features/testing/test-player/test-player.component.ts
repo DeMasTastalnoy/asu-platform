@@ -39,6 +39,12 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
   // Settings
   settings: any = null;
 
+  // Попытки / блокировка
+  attemptInfo: any = null;
+  blocked      = false;
+  requesting   = false;
+  requestSent  = false;
+
   constructor(
     private api: ApiService,
     private route: ActivatedRoute,
@@ -50,8 +56,15 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
     // Сначала настройки (лимит времени, перемешивание), затем вопросы.
     this.api.get<any>(`modules/${this.moduleId}/`).subscribe({
       next: m => {
-        this.settings = m.test_settings ?? null;
-        this.timeLimit = this.settings?.time_limit_sec ?? 0;
+        this.settings    = m.test_settings ?? null;
+        this.attemptInfo = m.attempts ?? null;
+        this.timeLimit   = this.settings?.time_limit_sec ?? 0;
+        if (this.attemptInfo?.blocked) {
+          this.blocked     = true;
+          this.requestSent = !!this.attemptInfo.pending_request;
+          this.loading     = false;
+          return;   // тест не загружаем — показываем заглушку
+        }
         this.loadQuestions();
       },
       error: () => this.loadQuestions(),
@@ -162,8 +175,36 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
         this.submitting = false;
         // Отмечаем модуль как завершённый
         this.api.post(`modules/${this.moduleId}/complete/`, { time_spent_sec: this.elapsed }).subscribe();
+        // Обновляем состояние попыток — для экрана результата (осталось / лимит исчерпан)
+        this.refreshAttempts();
       },
       error: () => { this.submitting = false; this.error = 'Ошибка при отправке ответов.'; },
+    });
+  }
+
+  /** Перечитывает состояние попыток (после отправки теста). */
+  private refreshAttempts(): void {
+    this.api.get<any>(`modules/${this.moduleId}/`).subscribe({
+      next: m => {
+        this.attemptInfo = m.attempts ?? this.attemptInfo;
+        this.requestSent = !!this.attemptInfo?.pending_request;
+      },
+    });
+  }
+
+  get attemptsLeft(): number | null {
+    if (!this.attemptInfo || this.attemptInfo.limit <= 0) return null;
+    return Math.max(0, this.attemptInfo.limit + this.attemptInfo.granted - this.attemptInfo.used);
+  }
+
+  /** Студент просит у преподавателя дополнительную попытку. */
+  requestAccess(): void {
+    if (this.requesting || this.requestSent) return;
+    this.requesting = true;
+    this.error = '';
+    this.api.post('attempt-requests/', { module: +this.moduleId }).subscribe({
+      next: () => { this.requesting = false; this.requestSent = true; },
+      error: () => { this.requesting = false; this.error = 'Не удалось отправить заявку. Попробуйте позже.'; },
     });
   }
 

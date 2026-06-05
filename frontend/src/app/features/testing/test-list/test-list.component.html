@@ -9,6 +9,31 @@
     <div class="error-msg" *ngIf="error">{{ error }}</div>
 
     <ng-container *ngIf="!loading">
+      <!-- Заявки студентов на дополнительные попытки -->
+      <div class="requests" *ngIf="isInstructor && requests.length > 0">
+        <div class="requests-title">
+          Заявки на доступ к тесту <span class="req-count">{{ requests.length }}</span>
+        </div>
+        <div class="req-item" *ngFor="let r of requests">
+          <div class="req-main">
+            <div class="req-student">{{ r.student_name }}</div>
+            <div class="req-meta">
+              <span>{{ r.module_title }}</span>
+              <span class="dot">·</span>
+              <span>{{ r.course_title }}</span>
+              <span class="dot">·</span>
+              <span>использовано попыток: {{ r.attempts_used }}</span>
+            </div>
+          </div>
+          <div class="req-actions">
+            <button class="btn-sm btn-approve" [disabled]="resolvingId === r.id"
+                    (click)="approveRequest(r)">Выдать попытку</button>
+            <button class="btn-sm" [disabled]="resolvingId === r.id"
+                    (click)="rejectRequest(r)">Отклонить</button>
+          </div>
+        </div>
+      </div>
+
       <div class="hint" *ngIf="isInstructor">
         Тесты создаются как модули типа «Тест» внутри курсов. Здесь — все ваши тесты:
         нажмите «Вопросы», чтобы собрать или изменить их.

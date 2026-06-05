@@ -4,12 +4,16 @@ from rest_framework.response import Response
 from django.utils import timezone
 
 from apps.users.permissions import IsAdmin, IsInstructor, IsInstructorOrReadOnly
-from .models import Course, CourseModule, Enrollment, ModuleProgress, TestQuestion, TestResult
+from .models import (
+    Course, CourseModule, Enrollment, ModuleProgress,
+    TestQuestion, TestResult, AttemptRequest,
+)
 from .serializers import (
     CourseListSerializer, CourseDetailSerializer, CourseCreateSerializer,
     CourseModuleSerializer, CourseModuleCreateSerializer,
     EnrollmentSerializer, EnrollmentCreateSerializer,
     TestQuestionSerializer, TestResultSerializer, TestSubmitSerializer,
+    AttemptRequestSerializer,
 )
 
 
@@ -208,3 +212,60 @@ class TestResultViewSet(viewsets.ReadOnlyModelViewSet):
         if user.primary_role == "student":
             return TestResult.objects.filter(user=user).select_related("module")
         return TestResult.objects.all().select_related("user", "module")
+
+
+class AttemptRequestViewSet(viewsets.ModelViewSet):
+    """
+    GET  /api/attempt-requests/            — заявки (свои для студента, по своим курсам для инструктора)
+    POST /api/attempt-requests/            — студент просит доп. попытку {module}
+    POST /api/attempt-requests/{id}/approve/ — инструктор выдаёт попытку {granted_attempts?}
+    POST /api/attempt-requests/{id}/reject/  — инструктор отклоняет
+    """
+    serializer_class   = AttemptRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs   = AttemptRequest.objects.select_related(
+            "student", "module", "module__course",
+        )
+        role = getattr(user, "primary_role", None)
+        if role == "student":
+            qs = qs.filter(student=user)
+        elif role == "instructor":
+            qs = qs.filter(module__course__instructor=user)
+        # admin — все
+        module_id = self.request.query_params.get("module")
+        if module_id:
+            qs = qs.filter(module_id=module_id)
+        status_param = self.request.query_params.get("status")
+        if status_param:
+            qs = qs.filter(status=status_param)
+        return qs
+
+    def _resolve(self, request, pk, new_status, granted):
+        """Общая обработка одобрения/отклонения инструктором."""
+        if request.user.primary_role not in ("admin", "instructor"):
+            return Response({"detail": "Недостаточно прав."}, status=status.HTTP_403_FORBIDDEN)
+        req = self.get_object()
+        if req.module.course.instructor_id != request.user.id and request.user.primary_role != "admin":
+            return Response({"detail": "Это заявка по чужому курсу."}, status=status.HTTP_403_FORBIDDEN)
+        req.status           = new_status
+        req.granted_attempts = granted
+        req.resolved_by      = request.user
+        req.resolved_at      = timezone.now()
+        req.save(update_fields=["status", "granted_attempts", "resolved_by", "resolved_at"])
+        return Response(self.get_serializer(req).data)
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        try:
+            granted = int(request.data.get("granted_attempts", 1))
+        except (TypeError, ValueError):
+            granted = 1
+        granted = max(1, granted)
+        return self._resolve(request, pk, AttemptRequest.Status.APPROVED, granted)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        return self._resolve(request, pk, AttemptRequest.Status.REJECTED, 0)

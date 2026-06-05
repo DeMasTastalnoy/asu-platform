@@ -1,9 +1,35 @@
+from django.db.models import Sum
 from rest_framework import serializers
 from .models import (
     Course, CourseModule, Enrollment, ModuleProgress,
-    TestSettings, TestQuestion, TestResult,
+    TestSettings, TestQuestion, TestResult, AttemptRequest,
 )
 from apps.users.serializers import UserSerializer
+
+
+def attempt_allowance(module, user):
+    """Считает попытки теста для пользователя: лимит, использовано, выдано доп.
+
+    limit == 0 трактуется как «без ограничения». Возвращает dict с флагом
+    blocked и наличием ожидающей заявки.
+    """
+    settings = getattr(module, "test_settings", None)
+    limit    = settings.max_attempts if settings else 0
+    used     = module.test_results.filter(user=user).count()
+    granted  = AttemptRequest.objects.filter(
+        student=user, module=module, status=AttemptRequest.Status.APPROVED,
+    ).aggregate(s=Sum("granted_attempts"))["s"] or 0
+    pending  = AttemptRequest.objects.filter(
+        student=user, module=module, status=AttemptRequest.Status.PENDING,
+    ).exists()
+    blocked  = limit > 0 and used >= limit + granted
+    return {
+        "limit":           limit,
+        "used":            used,
+        "granted":         granted,
+        "blocked":         blocked,
+        "pending_request": pending,
+    }
 
 
 class TestSettingsSerializer(serializers.ModelSerializer):
@@ -20,17 +46,27 @@ class CourseModuleSerializer(serializers.ModelSerializer):
     progress       = serializers.SerializerMethodField()
     course_title   = serializers.CharField(source="course.title", read_only=True)
     question_count = serializers.SerializerMethodField()
+    attempts       = serializers.SerializerMethodField()
 
     class Meta:
         model  = CourseModule
         fields = (
             "id", "course", "course_title", "title", "type", "content", "file_url",
             "order_num", "is_required", "unlock_after",
-            "test_settings", "question_count", "progress", "created_at",
+            "test_settings", "question_count", "attempts", "progress", "created_at",
         )
 
     def get_question_count(self, obj):
         return obj.questions.count()
+
+    def get_attempts(self, obj):
+        """Состояние попыток теста для текущего пользователя (None для не-тестов)."""
+        if obj.type != CourseModule.Type.TEST:
+            return None
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return None
+        return attempt_allowance(obj, request.user)
 
     def get_progress(self, obj):
         request = self.context.get("request")
@@ -186,10 +222,22 @@ class TestSubmitSerializer(serializers.Serializer):
 
     def validate_module_id(self, value):
         try:
-            module = CourseModule.objects.get(pk=value, type=CourseModule.Type.TEST)
+            CourseModule.objects.get(pk=value, type=CourseModule.Type.TEST)
         except CourseModule.DoesNotExist:
             raise serializers.ValidationError("Тестовый модуль не найден.")
         return value
+
+    def validate(self, attrs):
+        """Блокируем отправку, если исчерпан лимит попыток (0 = без ограничения)."""
+        request = self.context.get("request")
+        if request and request.user.is_authenticated:
+            module = CourseModule.objects.get(pk=attrs["module_id"])
+            allowance = attempt_allowance(module, request.user)
+            if allowance["blocked"]:
+                raise serializers.ValidationError(
+                    "Исчерпан лимит попыток. Обратитесь к преподавателю за доступом."
+                )
+        return attrs
 
     def save(self, user):
         from django.utils import timezone
@@ -232,3 +280,43 @@ class TestSubmitSerializer(serializers.Serializer):
             completed_at   = timezone.now(),
         )
         return result
+
+
+class AttemptRequestSerializer(serializers.ModelSerializer):
+    student_name  = serializers.CharField(source="student.full_name", read_only=True)
+    module_title  = serializers.CharField(source="module.title",      read_only=True)
+    course_title  = serializers.CharField(source="module.course.title", read_only=True)
+    attempts_used = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = AttemptRequest
+        fields = (
+            "id", "student", "student_name", "module", "module_title", "course_title",
+            "status", "granted_attempts", "attempts_used",
+            "created_at", "resolved_at",
+        )
+        read_only_fields = (
+            "id", "student", "student_name", "module_title", "course_title",
+            "status", "granted_attempts", "attempts_used",
+            "created_at", "resolved_at",
+        )
+
+    def get_attempts_used(self, obj):
+        return obj.module.test_results.filter(user=obj.student).count()
+
+    def validate_module(self, module):
+        if module.type != CourseModule.Type.TEST:
+            raise serializers.ValidationError("Модуль не является тестом.")
+        return module
+
+    def create(self, validated_data):
+        student = self.context["request"].user
+        module  = validated_data["module"]
+        # Не плодим дубли: если есть открытая заявка — возвращаем её.
+        existing = AttemptRequest.objects.filter(
+            student=student, module=module,
+            status=AttemptRequest.Status.PENDING,
+        ).first()
+        if existing:
+            return existing
+        return AttemptRequest.objects.create(student=student, module=module)

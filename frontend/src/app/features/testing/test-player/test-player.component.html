@@ -15,8 +15,32 @@
     <div class="loading" *ngIf="loading">Загрузка теста...</div>
     <div class="error-msg" *ngIf="error">{{ error }}</div>
 
+    <!-- Лимит попыток исчерпан -->
+    <div class="blocked-card" *ngIf="!loading && blocked">
+      <div class="blocked-icon">🔒</div>
+      <div class="blocked-title">Лимит попыток исчерпан</div>
+      <p class="blocked-text">
+        Вы использовали все доступные попытки
+        <ng-container *ngIf="attemptInfo">
+          ({{ attemptInfo.used }} из {{ attemptInfo.limit + attemptInfo.granted }})
+        </ng-container>.
+        Чтобы пройти тест ещё раз, запросите доступ у преподавателя.
+      </p>
+
+      <div class="blocked-actions">
+        <button class="btn-primary" *ngIf="!requestSent"
+                (click)="requestAccess()" [disabled]="requesting">
+          {{ requesting ? 'Отправка…' : 'Обратиться к преподавателю' }}
+        </button>
+        <div class="request-sent" *ngIf="requestSent">
+          ✓ Заявка отправлена. Преподаватель рассмотрит её и при необходимости откроет попытку.
+        </div>
+        <a routerLink="/courses" class="btn-outline">← К курсам</a>
+      </div>
+    </div>
+
     <!-- Нет вопросов -->
-    <div class="empty" *ngIf="!loading && !error && questions.length === 0">
+    <div class="empty" *ngIf="!loading && !error && !blocked && questions.length === 0">
       <p>В этом тесте пока нет вопросов.</p>
       <a routerLink="/courses" class="btn-primary">← К курсам</a>
     </div>
@@ -123,6 +147,23 @@
           <span class="review-num">{{ i + 1 }}</span>
           <span class="review-status">{{ item.is_correct ? '✓' : '✗' }}</span>
           <span class="review-text">{{ questions[i]?.question }}</span>
+        </div>
+      </div>
+
+      <!-- Попытки: осталось / лимит исчерпан -->
+      <div class="result-attempts" *ngIf="attemptInfo">
+        <ng-container *ngIf="attemptInfo.blocked">
+          <div class="retry-note">Это была последняя доступная попытка.</div>
+          <button class="btn-primary" *ngIf="!requestSent"
+                  (click)="requestAccess()" [disabled]="requesting">
+            {{ requesting ? 'Отправка…' : 'Обратиться к преподавателю' }}
+          </button>
+          <div class="request-sent" *ngIf="requestSent">
+            ✓ Заявка отправлена. Преподаватель рассмотрит её и при необходимости откроет попытку.
+          </div>
+        </ng-container>
+        <div class="retry-note" *ngIf="!attemptInfo.blocked && attemptsLeft !== null">
+          Осталось попыток: {{ attemptsLeft }}
         </div>
       </div>
 

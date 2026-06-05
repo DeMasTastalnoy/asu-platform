@@ -215,3 +215,39 @@ class TestResult(models.Model):
         if self.score is None or self.max_score is None or self.max_score == 0:
             return None
         return round(float(self.score) / float(self.max_score) * 100, 1)
+
+
+class AttemptRequest(models.Model):
+    """Заявка студента на дополнительную попытку прохождения теста."""
+    class Status(models.TextChoices):
+        PENDING  = "pending",  "Ожидает"
+        APPROVED = "approved", "Одобрена"
+        REJECTED = "rejected", "Отклонена"
+
+    student          = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="attempt_requests",
+    )
+    module           = models.ForeignKey(
+        CourseModule, on_delete=models.CASCADE, related_name="attempt_requests",
+    )
+    status           = models.CharField(
+        "Статус", max_length=20,
+        choices=Status.choices, default=Status.PENDING,
+    )
+    granted_attempts = models.PositiveSmallIntegerField("Выдано попыток", default=0)
+    resolved_by      = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="resolved_attempt_requests",
+    )
+    created_at       = models.DateTimeField(auto_now_add=True)
+    resolved_at      = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "attempt_requests"
+        ordering = ["-created_at"]
+        indexes  = [models.Index(fields=["student", "module"])]
+        verbose_name = "Заявка на попытку"
+        verbose_name_plural = "Заявки на попытки"
+
+    def __str__(self):
+        return f"{self.student} → {self.module} [{self.status}]"

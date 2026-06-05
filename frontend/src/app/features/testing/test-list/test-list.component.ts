@@ -26,6 +26,15 @@ interface CourseModuleRow {
   order_num: number;
 }
 
+interface AttemptRequestRow {
+  id: number;
+  student_name: string;
+  module_title: string;
+  course_title: string;
+  attempts_used: number;
+  created_at: string;
+}
+
 @Component({
   selector: 'app-test-list',
   standalone: true,
@@ -51,6 +60,10 @@ export class TestListComponent implements OnInit {
   courseModules:  CourseModuleRow[] = [];
   modulesLoading  = false;
   insertPos       = 0;   // вставить перед модулем с этим индексом (== длине → в конец)
+
+  // Заявки студентов на доп. попытки (для преподавателя)
+  requests: AttemptRequestRow[] = [];
+  resolvingId: number | null = null;
 
   constructor(
     private api:    ApiService,
@@ -79,6 +92,42 @@ export class TestListComponent implements OnInit {
         this.loading = false;
       },
       error: () => { this.loading = false; this.error = 'Не удалось загрузить тесты.'; },
+    });
+    if (this.isInstructor) this.loadRequests();
+  }
+
+  /** Заявки студентов на дополнительные попытки (ожидающие). */
+  loadRequests(): void {
+    this.api.get<any>('attempt-requests/?status=pending').subscribe({
+      next: data => {
+        const list = Array.isArray(data) ? data : data.results ?? [];
+        this.requests = list.map((r: any) => ({
+          id:            r.id,
+          student_name:  r.student_name,
+          module_title:  r.module_title,
+          course_title:  r.course_title,
+          attempts_used: r.attempts_used,
+          created_at:    r.created_at,
+        }));
+      },
+    });
+  }
+
+  approveRequest(r: AttemptRequestRow): void {
+    if (this.resolvingId) return;
+    this.resolvingId = r.id;
+    this.api.post(`attempt-requests/${r.id}/approve/`, { granted_attempts: 1 }).subscribe({
+      next: () => { this.requests = this.requests.filter(x => x.id !== r.id); this.resolvingId = null; },
+      error: () => { this.resolvingId = null; },
+    });
+  }
+
+  rejectRequest(r: AttemptRequestRow): void {
+    if (this.resolvingId) return;
+    this.resolvingId = r.id;
+    this.api.post(`attempt-requests/${r.id}/reject/`, {}).subscribe({
+      next: () => { this.requests = this.requests.filter(x => x.id !== r.id); this.resolvingId = null; },
+      error: () => { this.resolvingId = null; },
     });
   }
 

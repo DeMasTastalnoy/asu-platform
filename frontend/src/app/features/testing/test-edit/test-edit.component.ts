@@ -196,7 +196,7 @@ export class TestEditComponent implements OnInit {
 
     const test_settings = {
       time_limit_sec:     this.settings.timeLimitMin > 0 ? this.settings.timeLimitMin * 60 : null,
-      max_attempts:       this.settings.maxAttempts || 1,
+      max_attempts:       this.settings.maxAttempts >= 0 ? this.settings.maxAttempts : 0,
       passing_score:      this.settings.passingScore,
       shuffle_questions:  this.settings.shuffle,
       show_answers_after: this.settings.showAnswers,
