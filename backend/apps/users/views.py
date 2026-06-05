@@ -10,7 +10,8 @@ from .serializers import (
     UserSerializer, UserCreateSerializer,
     UserUpdateSerializer, ChangePasswordSerializer,
 )
-from .permissions import IsAdmin, IsAdminOrSelf
+from .permissions import IsAdmin, IsAdminOrSelf, IsInstructor
+from django.db.models import Q
 
 
 class RegisterView(generics.CreateAPIView):
@@ -83,6 +84,24 @@ class UserViewSet(viewsets.ModelViewSet):
         """GET /api/users/me/ — данные текущего пользователя."""
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], permission_classes=[IsInstructor])
+    def students(self, request):
+        """GET /api/users/students/?search= — список студентов (для пикера групп)."""
+        qs = User.objects.filter(primary_role="student", is_active=True)
+        search = request.query_params.get("search", "").strip()
+        if search:
+            qs = qs.filter(
+                Q(full_name__icontains=search) |
+                Q(username__icontains=search) |
+                Q(email__icontains=search)
+            )
+        qs = qs.order_by("full_name", "username")[:100]
+        data = [
+            {"id": u.id, "full_name": u.full_name, "username": u.username, "email": u.email}
+            for u in qs
+        ]
+        return Response(data)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminOrSelf])
     def change_password(self, request, pk=None):

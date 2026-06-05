@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import (
     Course, CourseModule, Enrollment, ModuleProgress,
     TestSettings, TestQuestion, TestResult, AttemptRequest,
+    StudentGroup, StudentGroupMember,
 )
 from apps.users.serializers import UserSerializer
 
@@ -331,3 +332,37 @@ class AttemptRequestSerializer(serializers.ModelSerializer):
         if existing:
             return existing
         return AttemptRequest.objects.create(student=student, module=module)
+
+
+class StudentGroupMemberSerializer(serializers.ModelSerializer):
+    student_id   = serializers.IntegerField(source="student.id",        read_only=True)
+    student_name = serializers.CharField(source="student.full_name",    read_only=True)
+    username     = serializers.CharField(source="student.username",     read_only=True)
+    email        = serializers.CharField(source="student.email",        read_only=True)
+
+    class Meta:
+        model  = StudentGroupMember
+        fields = ("student_id", "student_name", "username", "email", "joined_at")
+
+
+class StudentGroupSerializer(serializers.ModelSerializer):
+    curator_name  = serializers.CharField(source="curator.full_name", read_only=True)
+    members_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = StudentGroup
+        fields = (
+            "id", "name", "code", "description",
+            "curator", "curator_name", "status",
+            "members_count", "created_at",
+        )
+        read_only_fields = ("id", "curator", "curator_name", "created_at")
+
+    def get_members_count(self, obj):
+        return obj.memberships.count()
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        validated_data["curator"]    = user
+        validated_data["created_by"] = user
+        return super().create(validated_data)

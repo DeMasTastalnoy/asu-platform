@@ -53,6 +53,12 @@ class Enrollment(models.Model):
         User, on_delete=models.SET_NULL,
         null=True, blank=True, related_name="enrolled_students",
     )
+    # Через какую учебную группу студент зачислён (для аналитики по потокам).
+    group       = models.ForeignKey(
+        "StudentGroup", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="enrollments",
+        verbose_name="Учебная группа",
+    )
     status      = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     deadline    = models.DateField("Срок сдачи", null=True, blank=True)
     enrolled_at = models.DateTimeField(auto_now_add=True)
@@ -251,3 +257,64 @@ class AttemptRequest(models.Model):
 
     def __str__(self):
         return f"{self.student} → {self.module} [{self.status}]"
+
+
+# ── Учебные группы (потоки) ──────────────────────────────────
+
+class StudentGroup(models.Model):
+    """Учебная группа (поток) — набор студентов для пакетного зачисления и аналитики."""
+    class Status(models.TextChoices):
+        ACTIVE   = "active",   "Активна"
+        ARCHIVED = "archived", "Архив"
+
+    name        = models.CharField("Название", max_length=200)
+    code        = models.CharField("Код", max_length=50, blank=True)
+    description = models.TextField("Описание", blank=True)
+    curator     = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="curated_groups",
+        verbose_name="Куратор",
+    )
+    status      = models.CharField(
+        "Статус", max_length=20,
+        choices=Status.choices, default=Status.ACTIVE,
+    )
+    students    = models.ManyToManyField(
+        User, through="StudentGroupMember",
+        related_name="student_groups", verbose_name="Студенты",
+    )
+    created_by  = models.ForeignKey(
+        User, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="created_groups",
+    )
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "student_groups"
+        ordering = ["-created_at"]
+        indexes  = [models.Index(fields=["curator"])]
+        verbose_name = "Учебная группа"
+        verbose_name_plural = "Учебные группы"
+
+    def __str__(self):
+        return f"{self.name}" + (f" ({self.code})" if self.code else "")
+
+
+class StudentGroupMember(models.Model):
+    """Членство студента в учебной группе (through-модель)."""
+    group     = models.ForeignKey(
+        StudentGroup, on_delete=models.CASCADE, related_name="memberships",
+    )
+    student   = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="group_memberships",
+    )
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table        = "student_group_members"
+        unique_together = ("group", "student")
+        verbose_name    = "Участник группы"
+        verbose_name_plural = "Участники групп"
+
+    def __str__(self):
+        return f"{self.student} ∈ {self.group}"

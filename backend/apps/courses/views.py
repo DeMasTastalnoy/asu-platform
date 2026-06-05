@@ -4,9 +4,11 @@ from rest_framework.response import Response
 from django.utils import timezone
 
 from apps.users.permissions import IsAdmin, IsInstructor, IsInstructorOrReadOnly
+from apps.users.models import User
 from .models import (
     Course, CourseModule, Enrollment, ModuleProgress,
     TestQuestion, TestResult, AttemptRequest,
+    StudentGroup, StudentGroupMember,
 )
 from .serializers import (
     CourseListSerializer, CourseDetailSerializer, CourseCreateSerializer,
@@ -14,6 +16,7 @@ from .serializers import (
     EnrollmentSerializer, EnrollmentCreateSerializer,
     TestQuestionSerializer, TestResultSerializer, TestSubmitSerializer,
     AttemptRequestSerializer, test_passed,
+    StudentGroupSerializer, StudentGroupMemberSerializer,
 )
 
 
@@ -371,3 +374,109 @@ class AttemptRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
         return self._resolve(request, pk, AttemptRequest.Status.REJECTED, 0)
+
+
+class StudentGroupViewSet(viewsets.ModelViewSet):
+    """
+    GET/POST   /api/groups/                  — список/создание групп
+    PATCH/DELETE /api/groups/{id}/            — правка/удаление
+    GET  /api/groups/{id}/members/           — участники группы
+    POST /api/groups/{id}/add_members/       — добавить {student_ids:[]}
+    POST /api/groups/{id}/remove_members/    — убрать {student_ids:[]} (без отчисления)
+    POST /api/groups/{id}/enroll/            — зачислить всех на курс {course_id, deadline?}
+    POST /api/groups/{id}/archive/           — в архив
+
+    Видимость: инструктор — только свои группы (curator=он); admin — все.
+    """
+    serializer_class   = StudentGroupSerializer
+    permission_classes = [IsInstructor]
+
+    def get_queryset(self):
+        qs   = StudentGroup.objects.select_related("curator")
+        user = self.request.user
+        if user.primary_role == "instructor":
+            qs = qs.filter(curator=user)
+        status_param = self.request.query_params.get("status")
+        if status_param:
+            qs = qs.filter(status=status_param)
+        return qs
+
+    def _check_owner(self, group):
+        """True, если текущий пользователь вправе менять группу."""
+        user = self.request.user
+        return user.primary_role == "admin" or group.curator_id == user.id
+
+    @action(detail=True, methods=["get"])
+    def members(self, request, pk=None):
+        group   = self.get_object()
+        members = group.memberships.select_related("student").all()
+        return Response(StudentGroupMemberSerializer(members, many=True).data)
+
+    @action(detail=True, methods=["post"])
+    def add_members(self, request, pk=None):
+        group = self.get_object()
+        if not self._check_owner(group):
+            return Response({"detail": "Это чужая группа."}, status=status.HTTP_403_FORBIDDEN)
+        ids = request.data.get("student_ids", [])
+        students = User.objects.filter(id__in=ids, primary_role="student")
+        added = 0
+        for s in students:
+            _, created = StudentGroupMember.objects.get_or_create(group=group, student=s)
+            if created:
+                added += 1
+        return Response({"added": added, "members_count": group.memberships.count()})
+
+    @action(detail=True, methods=["post"])
+    def remove_members(self, request, pk=None):
+        group = self.get_object()
+        if not self._check_owner(group):
+            return Response({"detail": "Это чужая группа."}, status=status.HTTP_403_FORBIDDEN)
+        ids = request.data.get("student_ids", [])
+        removed, _ = StudentGroupMember.objects.filter(
+            group=group, student_id__in=ids
+        ).delete()
+        # Зачисления на курсы НЕ трогаем: членство ≠ зачисление.
+        return Response({"removed": removed, "members_count": group.memberships.count()})
+
+    @action(detail=True, methods=["post"])
+    def enroll(self, request, pk=None):
+        """Пакетно зачисляет всех участников группы на курс."""
+        group = self.get_object()
+        if not self._check_owner(group):
+            return Response({"detail": "Это чужая группа."}, status=status.HTTP_403_FORBIDDEN)
+
+        course_id = request.data.get("course_id")
+        deadline  = request.data.get("deadline") or None
+        try:
+            course = Course.objects.get(pk=course_id)
+        except Course.DoesNotExist:
+            return Response({"detail": "Курс не найден."}, status=status.HTTP_404_NOT_FOUND)
+        if request.user.primary_role == "instructor" and course.instructor_id != request.user.id:
+            return Response({"detail": "Это чужой курс."}, status=status.HTTP_403_FORBIDDEN)
+
+        enrolled = 0
+        for member in group.memberships.select_related("student"):
+            _, created = Enrollment.objects.get_or_create(
+                course=course, student=member.student,
+                defaults={
+                    "enrolled_by": request.user,
+                    "group":       group,
+                    "deadline":    deadline,
+                },
+            )
+            if created:
+                enrolled += 1
+        return Response({
+            "enrolled":     enrolled,
+            "course_title": course.title,
+            "total":        group.memberships.count(),
+        })
+
+    @action(detail=True, methods=["post"])
+    def archive(self, request, pk=None):
+        group = self.get_object()
+        if not self._check_owner(group):
+            return Response({"detail": "Это чужая группа."}, status=status.HTTP_403_FORBIDDEN)
+        group.status = StudentGroup.Status.ARCHIVED
+        group.save(update_fields=["status"])
+        return Response(self.get_serializer(group).data)
