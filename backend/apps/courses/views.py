@@ -13,7 +13,7 @@ from .serializers import (
     CourseModuleSerializer, CourseModuleCreateSerializer,
     EnrollmentSerializer, EnrollmentCreateSerializer,
     TestQuestionSerializer, TestResultSerializer, TestSubmitSerializer,
-    AttemptRequestSerializer,
+    AttemptRequestSerializer, test_passed,
 )
 
 
@@ -118,6 +118,14 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
     def complete(self, request, pk=None):
         """POST /api/modules/{id}/complete/ — студент завершил модуль."""
         module = self.get_object()
+
+        # Тест засчитываем завершённым только при сдаче (по проходному баллу).
+        if module.type == CourseModule.Type.TEST and not test_passed(module, request.user):
+            return Response(
+                {"detail": "Тест не сдан — модуль не засчитан.", "progress": "in_progress"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         enrollment = Enrollment.objects.filter(
             course=module.course, student=request.user, status="active"
         ).first()

@@ -173,8 +173,10 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
         this.result    = res;
         this.finished  = true;
         this.submitting = false;
-        // Отмечаем модуль как завершённый
-        this.api.post(`modules/${this.moduleId}/complete/`, { time_spent_sec: this.elapsed }).subscribe();
+        // Модуль засчитываем завершённым только при сдаче (по проходному баллу).
+        if (this.passed) {
+          this.api.post(`modules/${this.moduleId}/complete/`, { time_spent_sec: this.elapsed }).subscribe();
+        }
         // Обновляем состояние попыток — для экрана результата (осталось / лимит исчерпан)
         this.refreshAttempts();
       },
@@ -217,5 +219,21 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
   get scorePercent(): number {
     if (!this.result) return 0;
     return Math.round(this.result.score / this.result.max_score * 100);
+  }
+
+  /** Проходной балл из настроек теста (по умолчанию 60%). */
+  get passingScore(): number {
+    const ps = this.settings?.passing_score;
+    return ps != null ? Number(ps) : 60;
+  }
+
+  /** Вердикт «сдал/не сдал» по проходному баллу. */
+  get passed(): boolean {
+    return this.scorePercent >= this.passingScore;
+  }
+
+  /** Показывать разбор ответов после теста (по умолчанию да). */
+  get showAnswers(): boolean {
+    return this.settings?.show_answers_after !== false;
   }
 }

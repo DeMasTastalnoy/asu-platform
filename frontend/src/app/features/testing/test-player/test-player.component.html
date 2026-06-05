@@ -112,15 +112,16 @@
     <!-- Результат -->
     <div class="result-card" *ngIf="finished && result">
       <div class="result-icon"
-           [class.pass]="scorePercent >= 60"
-           [class.fail]="scorePercent < 60">
-        {{ scorePercent >= 60 ? '✓' : '✗' }}
+           [class.pass]="passed"
+           [class.fail]="!passed">
+        {{ passed ? '✓' : '✗' }}
       </div>
       <div class="result-title">
-        {{ scorePercent >= 60 ? 'Тест пройден!' : 'Тест не пройден' }}
+        {{ passed ? 'Тест пройден!' : 'Тест не пройден' }}
       </div>
       <div class="result-score">{{ result.score }} / {{ result.max_score }}</div>
       <div class="result-percent">{{ scorePercent }}%</div>
+      <div class="result-passing">Проходной балл: {{ passingScore }}%</div>
 
       <div class="result-stats">
         <div class="stat">
@@ -138,7 +139,7 @@
       </div>
 
       <!-- Разбор ответов -->
-      <div class="answers-review">
+      <div class="answers-review" *ngIf="showAnswers">
         <div class="review-title">Разбор ответов</div>
         <div class="review-item"
              *ngFor="let item of result.answers; let i = index"

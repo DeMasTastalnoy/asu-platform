@@ -32,6 +32,17 @@ def attempt_allowance(module, user):
     }
 
 
+def test_passed(module, user):
+    """Сдан ли тест пользователем — есть ли попытка с % ≥ проходного балла."""
+    settings  = getattr(module, "test_settings", None)
+    threshold = float(settings.passing_score) if settings else 60.0
+    for r in module.test_results.filter(user=user):
+        pct = r.score_percent
+        if pct is not None and pct >= threshold:
+            return True
+    return False
+
+
 class TestSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model  = TestSettings

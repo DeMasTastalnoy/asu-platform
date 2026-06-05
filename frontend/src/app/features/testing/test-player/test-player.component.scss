@@ -127,7 +127,8 @@
 }
 .result-title { font-size: 20px; font-weight: 600; color: #222; margin-bottom: 8px; }
 .result-score { font-size: 32px; font-weight: 700; color: #185FA5; }
-.result-percent { font-size: 16px; color: #888; margin-bottom: 24px; }
+.result-percent { font-size: 16px; color: #888; margin-bottom: 4px; }
+.result-passing { font-size: 12px; color: #aaa; margin-bottom: 24px; }
 
 .result-stats {
   display: flex; justify-content: center; gap: 40px; margin-bottom: 24px;
