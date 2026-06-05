@@ -1,0 +1,102 @@
+<div class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <a class="back-btn" (click)="back()">← К группам</a>
+      <span class="page-title">{{ group?.name || 'Группа' }}</span>
+      <span class="status" *ngIf="group?.status === 'archived'">Архив</span>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка…</div>
+    <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="!loading && group">
+      <div class="cols">
+        <!-- Левая колонка: реквизиты + зачисление -->
+        <div class="col">
+          <div class="panel">
+            <div class="panel-title">Реквизиты группы</div>
+            <label class="field">
+              <span class="field-label">Название</span>
+              <input type="text" [(ngModel)]="name" maxlength="200" />
+            </label>
+            <label class="field">
+              <span class="field-label">Код</span>
+              <input type="text" [(ngModel)]="code" maxlength="50" />
+            </label>
+            <label class="field">
+              <span class="field-label">Описание</span>
+              <textarea [(ngModel)]="description" rows="3"></textarea>
+            </label>
+            <div class="panel-actions">
+              <span class="saved" *ngIf="savedInfo">✓ Сохранено</span>
+              <button class="btn-primary" (click)="saveInfo()" [disabled]="!name.trim() || savingInfo">
+                {{ savingInfo ? 'Сохранение…' : 'Сохранить' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">Зачислить группу на курс</div>
+            <label class="field">
+              <span class="field-label">Курс</span>
+              <select [(ngModel)]="enrollCourseId">
+                <option [ngValue]="null" disabled>— выберите курс —</option>
+                <option *ngFor="let c of courses" [ngValue]="c.id">{{ c.title }}</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">Срок сдачи <span class="opt">(необязательно)</span></span>
+              <input type="date" [(ngModel)]="enrollDeadline" />
+            </label>
+            <div class="panel-actions">
+              <button class="btn-primary" (click)="enroll()"
+                      [disabled]="!enrollCourseId || enrolling || members.length === 0">
+                {{ enrolling ? 'Зачисление…' : 'Зачислить ' + members.length + ' студент(ов)' }}
+              </button>
+            </div>
+            <div class="enroll-msg" *ngIf="enrollMsg">{{ enrollMsg }}</div>
+          </div>
+        </div>
+
+        <!-- Правая колонка: состав -->
+        <div class="col">
+          <div class="panel">
+            <div class="panel-title">Состав группы <span class="count">{{ members.length }}</span></div>
+
+            <!-- Поиск/добавление -->
+            <div class="search-box">
+              <input type="text" [(ngModel)]="search" (ngModelChange)="onSearchInput()"
+                     (focus)="runSearch()" placeholder="Найти студента по ФИО / логину / email…" />
+            </div>
+            <div class="search-results" *ngIf="searchResults.length > 0">
+              <div class="sr-item" *ngFor="let s of searchResults">
+                <div class="sr-info">
+                  <div class="sr-name">{{ s.full_name || s.username }}</div>
+                  <div class="sr-sub">{{ s.email }}</div>
+                </div>
+                <button class="btn-add" (click)="addMember(s)">+ Добавить</button>
+              </div>
+            </div>
+            <div class="search-hint" *ngIf="searching">Поиск…</div>
+
+            <!-- Текущие участники -->
+            <div class="members" *ngIf="members.length > 0">
+              <div class="m-item" *ngFor="let m of members">
+                <div class="m-info">
+                  <div class="m-name">{{ m.student_name || m.username }}</div>
+                  <div class="m-sub">{{ m.email }}</div>
+                </div>
+                <button class="m-remove" (click)="removeMember(m)" title="Убрать из группы">✕</button>
+              </div>
+            </div>
+            <div class="empty-members" *ngIf="members.length === 0">
+              В группе пока нет студентов — найдите их через поиск выше.
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>

@@ -454,9 +454,10 @@ class StudentGroupViewSet(viewsets.ModelViewSet):
         if request.user.primary_role == "instructor" and course.instructor_id != request.user.id:
             return Response({"detail": "Это чужой курс."}, status=status.HTTP_403_FORBIDDEN)
 
-        enrolled = 0
+        enrolled = 0   # новых зачислений
+        tagged   = 0   # существующих, помеченных этой группой
         for member in group.memberships.select_related("student"):
-            _, created = Enrollment.objects.get_or_create(
+            enr, created = Enrollment.objects.get_or_create(
                 course=course, student=member.student,
                 defaults={
                     "enrolled_by": request.user,
@@ -466,8 +467,14 @@ class StudentGroupViewSet(viewsets.ModelViewSet):
             )
             if created:
                 enrolled += 1
+            elif enr.group_id is None:
+                # уже зачислен индивидуально — связываем с группой для аналитики
+                enr.group = group
+                enr.save(update_fields=["group"])
+                tagged += 1
         return Response({
             "enrolled":     enrolled,
+            "tagged":       tagged,
             "course_title": course.title,
             "total":        group.memberships.count(),
         })

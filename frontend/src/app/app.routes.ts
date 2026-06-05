@@ -35,6 +35,12 @@ export const routes: Routes = [
           import('./features/testing/testing.routes').then(m => m.TESTING_ROUTES),
       },
       {
+        path: 'groups',
+        canActivate: [roleGuard(['admin', 'instructor'])],
+        loadChildren: () =>
+          import('./features/groups/groups.routes').then(m => m.GROUPS_ROUTES),
+      },
+      {
         path: 'analytics',
         canActivate: [roleGuard(['admin', 'instructor'])],
         loadChildren: () =>

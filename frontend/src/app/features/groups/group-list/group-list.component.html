@@ -1,0 +1,67 @@
+<div class="page">
+  <div class="topbar">
+    <span class="page-title">Учебные группы</span>
+    <button class="btn-primary" (click)="openCreate()">+ Создать группу</button>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка…</div>
+    <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="!loading && !error">
+      <div class="empty" *ngIf="groups.length === 0">
+        <p>Групп пока нет. Создайте первую, чтобы зачислять студентов пакетно.</p>
+        <button class="btn-primary" (click)="openCreate()">+ Создать группу</button>
+      </div>
+
+      <div class="grid" *ngIf="groups.length > 0">
+        <div class="group-card" *ngFor="let g of groups" (click)="open(g)"
+             [class.archived]="g.status === 'archived'">
+          <div class="card-head">
+            <div class="card-title">{{ g.name }}</div>
+            <span class="code" *ngIf="g.code">{{ g.code }}</span>
+          </div>
+          <div class="card-desc" *ngIf="g.description">{{ g.description }}</div>
+          <div class="card-foot">
+            <span class="members">👥 {{ g.members_count }} студент(ов)</span>
+            <span class="status" [class.is-archived]="g.status === 'archived'">
+              {{ g.status === 'archived' ? 'Архив' : 'Активна' }}
+            </span>
+          </div>
+          <button class="archive-btn" *ngIf="g.status !== 'archived'"
+                  (click)="archive(g, $event)" title="Архивировать">⌦</button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Модалка создания -->
+  <div class="modal-overlay" *ngIf="showCreate" (click)="closeCreate()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-title">Новая группа</div>
+
+      <label class="field">
+        <span class="field-label">Название</span>
+        <input type="text" [(ngModel)]="newName" placeholder="Напр. Операторы котельных, набор 2026"
+               (keyup.enter)="submitCreate()" maxlength="200" />
+      </label>
+      <label class="field">
+        <span class="field-label">Код <span class="opt">(необязательно)</span></span>
+        <input type="text" [(ngModel)]="newCode" placeholder="Напр. ОК-26-1" maxlength="50" />
+      </label>
+      <label class="field">
+        <span class="field-label">Описание <span class="opt">(необязательно)</span></span>
+        <textarea [(ngModel)]="newDesc" rows="2"></textarea>
+      </label>
+
+      <div class="modal-error" *ngIf="createError">{{ createError }}</div>
+
+      <div class="modal-actions">
+        <button class="btn-sm" (click)="closeCreate()">Отмена</button>
+        <button class="btn-primary" (click)="submitCreate()" [disabled]="!newName.trim() || creating">
+          {{ creating ? 'Создание…' : 'Создать и открыть' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
