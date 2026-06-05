@@ -57,6 +57,7 @@
           </div>
           <div class="test-actions">
             <button class="btn-sm btn-sm-outline" *ngIf="isInstructor" (click)="edit(t)">Вопросы</button>
+            <button class="btn-sm btn-sm-outline" *ngIf="isInstructor" (click)="analytics(t)">Аналитика</button>
             <button class="btn-sm" (click)="play(t)" [disabled]="t.question_count === 0">Пройти</button>
           </div>
         </div>

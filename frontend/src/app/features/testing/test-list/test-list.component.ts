@@ -139,6 +139,10 @@ export class TestListComponent implements OnInit {
     this.router.navigate(['/testing', t.id]);
   }
 
+  analytics(t: TestModule): void {
+    this.router.navigate(['/testing', t.id, 'analytics']);
+  }
+
   // ── Создание теста ───────────────────────────────────────────────
   openCreate(): void {
     this.showCreate    = true;

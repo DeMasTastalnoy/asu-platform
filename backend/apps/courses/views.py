@@ -114,6 +114,100 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
             return CourseModuleCreateSerializer
         return CourseModuleSerializer
 
+    @action(detail=True, methods=["get"], permission_classes=[IsInstructor])
+    def analytics(self, request, pk=None):
+        """GET /api/modules/{id}/analytics/ — статистика по тесту (для преподавателя).
+
+        Сводка: число студентов, попыток, средний балл, % сдавших + разбивка
+        по студентам (число попыток, лучший результат, последняя попытка, сдал).
+        """
+        module = self.get_object()
+        if module.type != CourseModule.Type.TEST:
+            return Response({"detail": "Модуль не является тестом."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if (request.user.primary_role == "instructor"
+                and module.course.instructor_id != request.user.id):
+            return Response({"detail": "Это тест чужого курса."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        settings  = getattr(module, "test_settings", None)
+        threshold = float(settings.passing_score) if settings else 60.0
+
+        results = list(module.test_results.select_related("user").all())
+        by_student = {}
+        for r in results:
+            by_student.setdefault(r.user, []).append(r)
+
+        students      = []
+        best_pcts     = []
+        passed_count  = 0
+        for user, rs in by_student.items():
+            pcts = [r.score_percent for r in rs if r.score_percent is not None]
+            best = max(pcts) if pcts else None
+            last = max((r.completed_at or r.started_at) for r in rs)
+            is_passed = best is not None and best >= threshold
+            if is_passed:
+                passed_count += 1
+            if best is not None:
+                best_pcts.append(best)
+            students.append({
+                "student_id":   user.id,
+                "student_name": user.full_name or user.username,
+                "attempts":     len(rs),
+                "best_pct":     round(best, 1) if best is not None else None,
+                "last_at":      last,
+                "passed":       is_passed,
+            })
+        # лучшие сверху, «нет результата» — в конец
+        students.sort(key=lambda s: (s["best_pct"] is None, -(s["best_pct"] or 0)))
+
+        all_pcts = [r.score_percent for r in results if r.score_percent is not None]
+        n_students = len(by_student)
+        summary = {
+            "students":       n_students,
+            "total_attempts": len(results),
+            "avg_score":      round(sum(all_pcts) / len(all_pcts), 1) if all_pcts else None,
+            "avg_best":       round(sum(best_pcts) / len(best_pcts), 1) if best_pcts else None,
+            "pass_rate":      round(passed_count / n_students * 100, 1) if n_students else None,
+            "passing_score":  threshold,
+            "question_count": module.questions.count(),
+        }
+
+        # Сложность вопросов: доля верных ответов по каждому вопросу (по всем попыткам).
+        q_stats = {}  # question_id -> [answered, correct]
+        for r in results:
+            for a in (r.answers or []):
+                qid = a.get("question_id")
+                if qid is None:
+                    continue
+                st = q_stats.setdefault(qid, [0, 0])
+                st[0] += 1
+                if a.get("is_correct"):
+                    st[1] += 1
+        questions = []
+        for q in module.questions.all():
+            answered, correct = q_stats.get(q.id, [0, 0])
+            rate = round(correct / answered * 100, 1) if answered else None
+            questions.append({
+                "question_id":  q.id,
+                "question":     q.question,
+                "points":       q.points,
+                "answered":     answered,
+                "correct":      correct,
+                "correct_rate": rate,
+            })
+        # сложные (низкий % верных) — сверху; вопросы без ответов — в конец
+        questions.sort(key=lambda x: (x["correct_rate"] is None,
+                                      x["correct_rate"] if x["correct_rate"] is not None else 0))
+
+        return Response({
+            "module_id": module.id,
+            "title":     module.title,
+            "summary":   summary,
+            "students":  students,
+            "questions": questions,
+        })
+
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def complete(self, request, pk=None):
         """POST /api/modules/{id}/complete/ — студент завершил модуль."""

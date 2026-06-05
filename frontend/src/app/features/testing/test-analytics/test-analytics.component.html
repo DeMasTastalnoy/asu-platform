@@ -1,0 +1,99 @@
+<div class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <a routerLink="/testing" class="back-btn">← К тестам</a>
+      <span class="page-title">Аналитика: {{ title || '…' }}</span>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка…</div>
+    <div class="error-msg" *ngIf="error">{{ error }}</div>
+
+    <ng-container *ngIf="!loading && !error && summary">
+      <!-- Сводка -->
+      <div class="cards">
+        <div class="card">
+          <div class="card-val">{{ summary.students }}</div>
+          <div class="card-lbl">Студентов</div>
+        </div>
+        <div class="card">
+          <div class="card-val">{{ summary.total_attempts }}</div>
+          <div class="card-lbl">Попыток</div>
+        </div>
+        <div class="card">
+          <div class="card-val">{{ summary.avg_score != null ? summary.avg_score + '%' : '—' }}</div>
+          <div class="card-lbl">Средний балл</div>
+        </div>
+        <div class="card">
+          <div class="card-val">{{ summary.avg_best != null ? summary.avg_best + '%' : '—' }}</div>
+          <div class="card-lbl">Средний лучший</div>
+        </div>
+        <div class="card">
+          <div class="card-val" [class.good]="(summary.pass_rate ?? 0) >= 50">
+            {{ summary.pass_rate != null ? summary.pass_rate + '%' : '—' }}
+          </div>
+          <div class="card-lbl">Сдали (≥ {{ summary.passing_score }}%)</div>
+        </div>
+      </div>
+
+      <!-- Разбивка по студентам -->
+      <div class="section-title">По студентам</div>
+
+      <div class="empty" *ngIf="students.length === 0">
+        Этот тест ещё никто не проходил.
+      </div>
+
+      <table class="students" *ngIf="students.length > 0">
+        <thead>
+          <tr>
+            <th>Студент</th>
+            <th class="num">Попыток</th>
+            <th class="num">Лучший результат</th>
+            <th class="num">Последняя попытка</th>
+            <th class="num">Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of students">
+            <td>{{ s.student_name }}</td>
+            <td class="num">{{ s.attempts }}</td>
+            <td class="num">
+              <span class="badge" [class]="pctClass(s.best_pct)">
+                {{ s.best_pct != null ? s.best_pct + '%' : '—' }}
+              </span>
+            </td>
+            <td class="num muted">{{ s.last_at ? (s.last_at | date:'dd.MM.yy HH:mm') : '—' }}</td>
+            <td class="num">
+              <span class="status" [class.passed]="s.passed">
+                {{ s.passed ? '✓ Сдал' : '✗ Не сдал' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Сложность вопросов -->
+      <div class="section-title" *ngIf="questions.length > 0" style="margin-top: 28px;">
+        Сложность вопросов <span class="section-hint">(сложные — сверху)</span>
+      </div>
+
+      <div class="questions" *ngIf="questions.length > 0">
+        <div class="q-row" *ngFor="let q of questions; let i = index">
+          <div class="q-num">{{ i + 1 }}</div>
+          <div class="q-body">
+            <div class="q-text">{{ q.question }}</div>
+            <div class="q-bar">
+              <div class="q-bar-fill" [class]="rateClass(q.correct_rate)"
+                   [style.width.%]="q.correct_rate ?? 0"></div>
+            </div>
+          </div>
+          <div class="q-stat">
+            <div class="q-rate">{{ q.correct_rate != null ? q.correct_rate + '%' : '—' }}</div>
+            <div class="q-sub">{{ q.correct }}/{{ q.answered }} верно</div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</div>
