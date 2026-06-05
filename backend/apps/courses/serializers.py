@@ -58,10 +58,11 @@ class CourseModuleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model  = CourseModule
         fields = (
-            "course", "title", "type", "content",
+            "id", "course", "title", "type", "content",
             "file_url", "order_num", "is_required",
             "unlock_after", "test_settings",
         )
+        read_only_fields = ("id",)
 
     def create(self, validated_data):
         test_settings_data = validated_data.pop("test_settings", None)

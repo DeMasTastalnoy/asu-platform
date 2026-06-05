@@ -29,7 +29,14 @@
       </div>
 
       <div class="modules-section">
-        <h3 class="section-title">Модули курса</h3>
+        <h3 class="section-title">
+          Модули курса
+          <span class="reorder-hint" *ngIf="canReorder && modules.length > 1">
+            — перетащите за <span class="grip-inline">⠿</span>, чтобы изменить порядок
+          </span>
+          <span class="reorder-saving" *ngIf="reordering">сохранение…</span>
+        </h3>
+        <div class="error-msg" *ngIf="reorderError">{{ reorderError }}</div>
 
         <div class="empty-modules" *ngIf="modules.length === 0">
           <p>Модулей пока нет.</p>
@@ -40,8 +47,11 @@
           </button>
         </div>
 
-        <div class="modules-list" *ngIf="modules.length > 0">
-          <div class="module-item" *ngFor="let module of modules; let i = index">
+        <div class="modules-list" *ngIf="modules.length > 0"
+             cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListDisabled]="!canReorder">
+          <div class="module-item" *ngFor="let module of modules; let i = index" cdkDrag>
+            <div class="module-placeholder" *cdkDragPlaceholder></div>
+            <div class="drag-handle" *ngIf="canReorder" cdkDragHandle title="Перетащить">⠿</div>
             <div class="module-num">{{ i + 1 }}</div>
             <div class="module-icon" [class]="'icon-' + getTypeColor(module.type)">
               {{ getTypeLabel(module.type)[0] }}

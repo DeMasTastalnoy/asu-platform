@@ -141,7 +141,14 @@ export class ModuleCreateComponent implements OnInit {
    * (если изменилась или тип модуля больше не «симуляция») и привязывает новую.
    */
   private syncSimulation(moduleId: any, selected: string): void {
-    const done = () => this.router.navigate(['/courses', this.courseId]);
+    const done = () => {
+      // Новый тест ведём сразу в редактор вопросов — иначе он создаётся пустым.
+      if (!this.isEdit && this.selectedType === 'test' && moduleId) {
+        this.router.navigate(['/testing', moduleId, 'edit']);
+      } else {
+        this.router.navigate(['/courses', this.courseId]);
+      }
+    };
 
     const isSim     = this.selectedType === 'simulation';
     const desiredId = (isSim && selected) ? Number(selected) : null;

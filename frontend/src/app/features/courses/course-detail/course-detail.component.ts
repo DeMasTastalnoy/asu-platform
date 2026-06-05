@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { forkJoin } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-course-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, DragDropModule],
   templateUrl: './course-detail.component.html',
   styleUrl: './course-detail.component.scss',
 })
@@ -17,6 +19,8 @@ export class CourseDetailComponent implements OnInit {
   loading = true;
   error   = '';
   user:   any;
+  reordering   = false;
+  reorderError = '';
 
   constructor(
     private api:    ApiService,
@@ -50,6 +54,37 @@ export class CourseDetailComponent implements OnInit {
     this.api.get<any>(`courses/${courseId}/modules/`).subscribe({
       next: data => {
         this.modules = Array.isArray(data) ? data : data.results ?? [];
+      },
+    });
+  }
+
+  get canReorder(): boolean {
+    return this.user()?.primary_role !== 'student';
+  }
+
+  /** Перетаскивание модуля: меняем порядок локально и сохраняем на сервере. */
+  drop(event: CdkDragDrop<any[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+    moveItemInArray(this.modules, event.previousIndex, event.currentIndex);
+
+    // Проставляем order_num = индексу для всех, у кого он изменился.
+    this.reordering   = true;
+    this.reorderError = '';
+    const patches = this.modules
+      .map((m, idx) => ({ m, idx }))
+      .filter(({ m, idx }) => m.order_num !== idx)
+      .map(({ m, idx }) => {
+        m.order_num = idx;
+        return this.api.patch(`modules/${m.id}/`, { order_num: idx });
+      });
+
+    if (patches.length === 0) { this.reordering = false; return; }
+
+    forkJoin(patches).subscribe({
+      next: () => { this.reordering = false; },
+      error: () => {
+        this.reordering   = false;
+        this.reorderError = 'Не удалось сохранить порядок. Обновите страницу.';
       },
     });
   }

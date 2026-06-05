@@ -1,6 +1,7 @@
 <div class="page">
   <div class="topbar">
     <span class="page-title">Тесты</span>
+    <button class="btn-primary" *ngIf="isInstructor" (click)="openCreate()">+ Создать тест</button>
   </div>
 
   <div class="content">
@@ -14,8 +15,9 @@
       </div>
 
       <div class="empty" *ngIf="tests.length === 0">
-        <p *ngIf="isInstructor">Тестов пока нет. Добавьте в курсе модуль типа «Тест», затем соберите вопросы здесь.</p>
+        <p *ngIf="isInstructor">Тестов пока нет. Нажмите «Создать тест», чтобы добавить первый.</p>
         <p *ngIf="!isInstructor">Доступных тестов пока нет.</p>
+        <button class="btn-primary" *ngIf="isInstructor" (click)="openCreate()">+ Создать тест</button>
       </div>
 
       <div class="test-list" *ngIf="tests.length > 0">
@@ -35,5 +37,50 @@
         </div>
       </div>
     </ng-container>
+  </div>
+
+  <!-- Модалка создания теста -->
+  <div class="modal-overlay" *ngIf="showCreate" (click)="closeCreate()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-title">Новый тест</div>
+
+      <label class="field">
+        <span class="field-label">Курс</span>
+        <select [(ngModel)]="newCourseId" (ngModelChange)="onCourseChange()">
+          <option [ngValue]="null" disabled>— выберите курс —</option>
+          <option *ngFor="let c of courses" [ngValue]="c.id">{{ c.title }}</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Название теста</span>
+        <input type="text" [(ngModel)]="newTitle" placeholder="Напр. Итоговый тест по теме"
+               (keyup.enter)="submitCreate()" maxlength="200" />
+      </label>
+
+      <label class="field" *ngIf="newCourseId">
+        <span class="field-label">Позиция в курсе</span>
+        <div class="modules-loading" *ngIf="modulesLoading">Загрузка модулей…</div>
+        <select [(ngModel)]="insertPos" *ngIf="!modulesLoading">
+          <option [ngValue]="0">В начало курса</option>
+          <option *ngFor="let m of courseModules; let i = index" [ngValue]="i + 1">
+            После: {{ m.title }} ({{ typeLabel(m.type) }})
+          </option>
+        </select>
+        <span class="field-hint" *ngIf="!modulesLoading && courseModules.length === 0">
+          В курсе пока нет модулей — тест станет первым.
+        </span>
+      </label>
+
+      <div class="modal-error" *ngIf="createError">{{ createError }}</div>
+
+      <div class="modal-actions">
+        <button class="btn-sm" (click)="closeCreate()">Отмена</button>
+        <button class="btn-primary" (click)="submitCreate()"
+                [disabled]="!newCourseId || !newTitle.trim() || creating">
+          {{ creating ? 'Создание…' : 'Создать и открыть' }}
+        </button>
+      </div>
+    </div>
   </div>
 </div>

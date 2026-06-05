@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -12,10 +14,22 @@ interface TestModule {
   question_count: number;
 }
 
+interface CourseOption {
+  id: number;
+  title: string;
+}
+
+interface CourseModuleRow {
+  id: number;
+  title: string;
+  type: string;
+  order_num: number;
+}
+
 @Component({
   selector: 'app-test-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './test-list.component.html',
   styleUrl: './test-list.component.scss',
 })
@@ -24,6 +38,19 @@ export class TestListComponent implements OnInit {
   loading = true;
   error   = '';
   user: any;
+
+  // Модалка «Создать тест»
+  showCreate    = false;
+  courses:        CourseOption[] = [];
+  newCourseId:    number | null  = null;
+  newTitle        = '';
+  creating        = false;
+  createError     = '';
+
+  // Позиция нового теста среди модулей выбранного курса
+  courseModules:  CourseModuleRow[] = [];
+  modulesLoading  = false;
+  insertPos       = 0;   // вставить перед модулем с этим индексом (== длине → в конец)
 
   constructor(
     private api:    ApiService,
@@ -61,5 +88,95 @@ export class TestListComponent implements OnInit {
 
   play(t: TestModule): void {
     this.router.navigate(['/testing', t.id]);
+  }
+
+  // ── Создание теста ───────────────────────────────────────────────
+  openCreate(): void {
+    this.showCreate    = true;
+    this.createError   = '';
+    this.newTitle      = '';
+    this.newCourseId   = null;
+    this.courseModules = [];
+    this.insertPos     = 0;
+    if (this.courses.length === 0) {
+      this.api.get<any>('courses/').subscribe({
+        next: data => {
+          const list = Array.isArray(data) ? data : data.results ?? [];
+          this.courses = list.map((c: any) => ({ id: c.id, title: c.title }));
+          if (this.courses.length === 1) {
+            this.newCourseId = this.courses[0].id;
+            this.onCourseChange();
+          }
+        },
+        error: () => { this.createError = 'Не удалось загрузить список курсов.'; },
+      });
+    }
+  }
+
+  /** При выборе курса — подгружаем его модули, чтобы показать позиции вставки. */
+  onCourseChange(): void {
+    this.courseModules = [];
+    this.insertPos     = 0;
+    if (!this.newCourseId) return;
+    this.modulesLoading = true;
+    this.api.get<any>(`courses/${this.newCourseId}/modules/`).subscribe({
+      next: data => {
+        const list = Array.isArray(data) ? data : data.results ?? [];
+        this.courseModules = list.map((m: any) => ({
+          id: m.id, title: m.title, type: m.type, order_num: m.order_num ?? 0,
+        }));
+        this.insertPos      = this.courseModules.length;  // по умолчанию — в конец
+        this.modulesLoading = false;
+      },
+      error: () => { this.modulesLoading = false; },
+    });
+  }
+
+  closeCreate(): void {
+    this.showCreate = false;
+  }
+
+  typeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      lecture: 'Лекция', video: 'Видео', document: 'Документ',
+      test: 'Тест', simulation: 'Симуляция',
+    };
+    return labels[type] ?? type;
+  }
+
+  submitCreate(): void {
+    const title = this.newTitle.trim();
+    if (!this.newCourseId || !title || this.creating) return;
+    this.creating    = true;
+    this.createError = '';
+
+    // Создаём тест на выбранной позиции и пере-нумеровываем модули курса
+    // по их текущему порядку, чтобы вставка была чёткой (а не среди нулей).
+    const create$ = this.api.post<any>('modules/', {
+      course:    this.newCourseId,
+      title,
+      type:      'test',
+      order_num: this.insertPos,
+    });
+
+    // Существующим модулям проставляем 0..N-1, сдвигая на +1 всех от позиции вставки.
+    const patches$ = this.courseModules.map((m, idx) => {
+      const target = idx < this.insertPos ? idx : idx + 1;
+      return m.order_num === target
+        ? of(null)
+        : this.api.patch(`modules/${m.id}/`, { order_num: target });
+    });
+
+    forkJoin([create$, ...patches$]).subscribe({
+      next: ([module]) => {
+        this.creating   = false;
+        this.showCreate = false;
+        this.router.navigate(['/testing', (module as any).id, 'edit']);
+      },
+      error: err => {
+        this.creating    = false;
+        this.createError = err.error?.title?.[0] || 'Не удалось создать тест.';
+      },
+    });
   }
 }
