@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
 
@@ -31,10 +32,19 @@ interface QuestionRow {
   correct_rate: number | null;
 }
 
+interface GroupCmp {
+  group_id: number;
+  name: string;
+  code: string;
+  students: number;
+  avg_best: number;
+  pass_rate: number;
+}
+
 @Component({
   selector: 'app-test-analytics',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './test-analytics.component.html',
   styleUrl: './test-analytics.component.scss',
 })
@@ -44,6 +54,8 @@ export class TestAnalyticsComponent implements OnInit {
   summary: Summary | null = null;
   students: StudentRow[] = [];
   questions: QuestionRow[] = [];
+  groups: GroupCmp[] = [];
+  selectedGroup: number | null = null;
   loading = true;
   error   = '';
 
@@ -54,16 +66,27 @@ export class TestAnalyticsComponent implements OnInit {
 
   ngOnInit(): void {
     this.moduleId = this.route.snapshot.paramMap.get('moduleId') ?? '';
-    this.api.get<any>(`modules/${this.moduleId}/analytics/`).subscribe({
+    this.reload();
+  }
+
+  reload(): void {
+    this.loading = true;
+    const params: Record<string, string> = this.selectedGroup ? { group: String(this.selectedGroup) } : {};
+    this.api.get<any>(`modules/${this.moduleId}/analytics/`, params).subscribe({
       next: data => {
         this.title     = data.title;
         this.summary   = data.summary;
         this.students  = data.students ?? [];
         this.questions = data.questions ?? [];
+        this.groups    = data.groups ?? [];
         this.loading   = false;
       },
       error: () => { this.loading = false; this.error = 'Не удалось загрузить аналитику.'; },
     });
+  }
+
+  onGroupChange(): void {
+    this.reload();
   }
 
   pctClass(pct: number | null): string {

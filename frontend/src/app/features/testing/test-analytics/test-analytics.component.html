@@ -11,6 +11,42 @@
     <div class="error-msg" *ngIf="error">{{ error }}</div>
 
     <ng-container *ngIf="!loading && !error && summary">
+      <!-- Сравнение групп -->
+      <div class="group-cmp" *ngIf="groups.length > 0">
+        <div class="section-title">Сравнение групп</div>
+        <table class="cmp-table">
+          <thead>
+            <tr>
+              <th>Группа</th>
+              <th class="num">Студентов</th>
+              <th class="num">Средний лучший</th>
+              <th class="num">Сдали</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let g of groups">
+              <td>{{ g.name }} <span class="code" *ngIf="g.code">{{ g.code }}</span></td>
+              <td class="num">{{ g.students }}</td>
+              <td class="num">{{ g.avg_best }}%</td>
+              <td class="num">
+                <span class="badge" [class.badge-green]="g.pass_rate >= 50" [class.badge-red]="g.pass_rate < 50">
+                  {{ g.pass_rate }}%
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Фильтр по группе -->
+      <div class="filter-bar" *ngIf="groups.length > 0">
+        <span class="filter-label">Показать данные по:</span>
+        <select [(ngModel)]="selectedGroup" (ngModelChange)="onGroupChange()">
+          <option [ngValue]="null">Все студенты</option>
+          <option *ngFor="let g of groups" [ngValue]="g.group_id">{{ g.name }}</option>
+        </select>
+      </div>
+
       <!-- Сводка -->
       <div class="cards">
         <div class="card">

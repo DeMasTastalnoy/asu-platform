@@ -136,7 +136,17 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
         settings  = getattr(module, "test_settings", None)
         threshold = float(settings.passing_score) if settings else 60.0
 
-        results = list(module.test_results.select_related("user").all())
+        all_results = list(module.test_results.select_related("user").all())
+
+        # Фильтр детальной части по учебной группе (?group=<id>).
+        group_param = request.query_params.get("group")
+        results = all_results
+        if group_param:
+            member_ids = set(StudentGroupMember.objects.filter(
+                group_id=group_param
+            ).values_list("student_id", flat=True))
+            results = [r for r in all_results if r.user_id in member_ids]
+
         by_student = {}
         for r in results:
             by_student.setdefault(r.user, []).append(r)
@@ -203,12 +213,49 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
         questions.sort(key=lambda x: (x["correct_rate"] is None,
                                       x["correct_rate"] if x["correct_rate"] is not None else 0))
 
+        # Сравнение учебных групп (всегда по всем результатам, без учёта фильтра).
+        results_by_user = {}
+        for r in all_results:
+            results_by_user.setdefault(r.user_id, []).append(r)
+        groups_qs = StudentGroup.objects.all()
+        if request.user.primary_role == "instructor":
+            groups_qs = groups_qs.filter(curator=request.user)
+        groups_cmp = []
+        for g in groups_qs:
+            member_ids = g.memberships.values_list("student_id", flat=True)
+            g_best = []
+            g_passed = 0
+            for uid in member_ids:
+                rs = results_by_user.get(uid)
+                if not rs:
+                    continue
+                pcts = [x.score_percent for x in rs if x.score_percent is not None]
+                if not pcts:
+                    continue
+                best = max(pcts)
+                g_best.append(best)
+                if best >= threshold:
+                    g_passed += 1
+            if not g_best:
+                continue  # в этой группе никто не проходил тест — пропускаем
+            groups_cmp.append({
+                "group_id":  g.id,
+                "name":      g.name,
+                "code":      g.code,
+                "students":  len(g_best),
+                "avg_best":  round(sum(g_best) / len(g_best), 1),
+                "pass_rate": round(g_passed / len(g_best) * 100, 1),
+            })
+        groups_cmp.sort(key=lambda x: -x["pass_rate"])
+
         return Response({
             "module_id": module.id,
             "title":     module.title,
+            "group":     int(group_param) if group_param else None,
             "summary":   summary,
             "students":  students,
             "questions": questions,
+            "groups":    groups_cmp,
         })
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
