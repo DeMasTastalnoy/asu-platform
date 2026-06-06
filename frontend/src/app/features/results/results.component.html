@@ -1,0 +1,55 @@
+<div class="page">
+  <div class="topbar">
+    <span class="page-title">Мои результаты</span>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка…</div>
+
+    <ng-container *ngIf="!loading">
+      <!-- Тесты -->
+      <div class="card">
+        <div class="card-title">Тесты</div>
+        <div class="empty" *ngIf="tests.length === 0">Вы ещё не проходили тесты.</div>
+        <table class="data-table" *ngIf="tests.length > 0">
+          <thead>
+            <tr><th>Тест</th><th>Попытка</th><th>Балл</th><th>Результат</th><th>Дата</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of tests">
+              <td>{{ r.module_title }}</td>
+              <td>№{{ r.attempt_num }}</td>
+              <td class="muted">{{ r.score }} / {{ r.max_score }}</td>
+              <td><span class="badge" [class]="pctBadge(r.pct)">{{ r.pct }}%</span></td>
+              <td class="muted">{{ r.completed_at ? (r.completed_at | date:'dd.MM.yy HH:mm') : '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Симуляции -->
+      <div class="card">
+        <div class="card-title">Симуляции</div>
+        <div class="empty" *ngIf="sims.length === 0">Вы ещё не проходили симуляции.</div>
+        <table class="data-table" *ngIf="sims.length > 0">
+          <thead>
+            <tr><th>Симуляция</th><th>Попытка</th><th>Результат</th><th>Статус</th><th>Дата</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of sims">
+              <td>{{ r.simulation_name }}</td>
+              <td>№{{ r.attempt_num }}</td>
+              <td><span class="badge" [class]="pctBadge(r.pct)">{{ r.pct != null ? r.pct + '%' : '—' }}</span></td>
+              <td>
+                <span class="tag" [class.danger]="r.safety_tripped" [class.ok]="!r.safety_tripped && r.completed">
+                  {{ r.safety_tripped ? '⚠ Авария' : (r.completed ? '✓ Без аварий' : 'Не завершено') }}
+                </span>
+              </td>
+              <td class="muted">{{ r.completed_at ? (r.completed_at | date:'dd.MM.yy HH:mm') : '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </div>
+</div>

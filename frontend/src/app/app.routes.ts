@@ -41,6 +41,12 @@ export const routes: Routes = [
           import('./features/groups/groups.routes').then(m => m.GROUPS_ROUTES),
       },
       {
+        path: 'results',
+        canActivate: [roleGuard(['student'])],
+        loadChildren: () =>
+          import('./features/results/results.routes').then(m => m.RESULTS_ROUTES),
+      },
+      {
         path: 'analytics',
         canActivate: [roleGuard(['admin', 'instructor'])],
         loadChildren: () =>

@@ -20,6 +20,10 @@
       <a class="nav-item" routerLink="/testing" routerLinkActive="active">
         <span class="nav-icon">📝</span> Тестирование
       </a>
+      <a class="nav-item" routerLink="/results" routerLinkActive="active"
+         *ngIf="user()?.primary_role === 'student'">
+        <span class="nav-icon">🏅</span> Мои результаты
+      </a>
       <a class="nav-item" routerLink="/groups" routerLinkActive="active"
          *ngIf="user()?.primary_role !== 'student'">
         <span class="nav-icon">👥</span> Группы
