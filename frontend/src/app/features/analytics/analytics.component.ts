@@ -13,6 +13,7 @@ interface GroupRow {
   completed: number;
   completion_rate: number;
   avg_test_score: number | null;
+  avg_sim_score: number | null;
 }
 
 interface ModuleRow {
@@ -23,12 +24,22 @@ interface ModuleRow {
   pass_rate: number | null;
 }
 
+interface SimRow {
+  module_id: number;
+  title: string;
+  attempted: number;
+  avg_score: number | null;
+  success_rate: number | null;
+}
+
 interface Summary {
   enrolled: number;
   completed: number;
   completion_rate: number;
   avg_test_score: number | null;
+  avg_sim_score: number | null;
   test_modules: number;
+  sim_modules: number;
 }
 
 @Component({
@@ -47,6 +58,7 @@ export class AnalyticsComponent implements OnInit {
   summary: Summary | null = null;
   groups: GroupRow[] = [];
   modules: ModuleRow[] = [];
+  sims: SimRow[] = [];
 
   constructor(private api: ApiService) {}
 
@@ -65,12 +77,13 @@ export class AnalyticsComponent implements OnInit {
   selectCourse(course: Course): void {
     this.selectedCourse = course;
     this.loadingData = true;
-    this.summary = null; this.groups = []; this.modules = [];
+    this.summary = null; this.groups = []; this.modules = []; this.sims = [];
     this.api.get<any>(`courses/${course.id}/group-analytics/`).subscribe({
       next: data => {
         this.summary = data.summary;
         this.groups  = data.groups ?? [];
         this.modules = data.modules ?? [];
+        this.sims    = data.sims ?? [];
         this.loadingData = false;
       },
       error: () => { this.loadingData = false; },

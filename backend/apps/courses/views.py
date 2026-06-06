@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from apps.users.permissions import IsAdmin, IsInstructor, IsInstructorOrReadOnly
 from apps.users.models import User
+from apps.simulations.models import SimulationResult
 from .models import (
     Course, CourseModule, Enrollment, ModuleProgress,
     TestQuestion, TestResult, AttemptRequest,
@@ -117,6 +118,31 @@ class CourseViewSet(viewsets.ModelViewSet):
             vals = [best[(uid, mid)] for mid in tm_ids if (uid, mid) in best]
             return sum(vals) / len(vals) if vals else None
 
+        # Симуляции курса: лучший результат (%) каждого студента по сим-модулю + успешность.
+        sim_modules = list(course.modules.filter(type=CourseModule.Type.SIMULATION))
+        sm_ids      = [m.id for m in sim_modules]
+        best_sim    = {}  # (user_id, module_id) -> pct
+        best_sim_ok = {}  # (user_id, module_id) -> bool (лучший проход без аварии)
+        if sm_ids:
+            sim_qs = SimulationResult.objects.filter(
+                simulation__module__course=course, enrollment__isnull=False,
+            ).select_related("enrollment", "simulation")
+            for r in sim_qs:
+                mid = r.simulation.module_id
+                if mid not in sm_ids:
+                    continue
+                pct = r.score_percent
+                if pct is None:
+                    continue
+                key = (r.enrollment.student_id, mid)
+                if key not in best_sim or pct > best_sim[key]:
+                    best_sim[key]    = pct
+                    best_sim_ok[key] = bool(r.completed and not r.safety_tripped)
+
+        def student_sim_avg(uid):
+            vals = [best_sim[(uid, mid)] for mid in sm_ids if (uid, mid) in best_sim]
+            return sum(vals) / len(vals) if vals else None
+
         # Группировка зачислений по учебной группе (None → «Без группы»).
         from collections import defaultdict
         by_group = defaultdict(list)
@@ -127,6 +153,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         for g, ens in by_group.items():
             comp = [e.get_progress_percent() for e in ens]
             avgs = [a for a in (student_course_avg(e.student_id) for e in ens) if a is not None]
+            savg = [a for a in (student_sim_avg(e.student_id) for e in ens) if a is not None]
             groups_out.append({
                 "group_id":        g.id if g else None,
                 "name":            g.name if g else "Без группы",
@@ -135,6 +162,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                 "completed":       sum(1 for c in comp if c >= 100),
                 "completion_rate": round(sum(comp) / len(comp), 1) if comp else 0.0,
                 "avg_test_score":  round(sum(avgs) / len(avgs), 1) if avgs else None,
+                "avg_sim_score":   round(sum(savg) / len(savg), 1) if savg else None,
             })
         groups_out.sort(key=lambda x: (x["group_id"] is None, -x["completion_rate"]))
 
@@ -151,14 +179,30 @@ class CourseViewSet(viewsets.ModelViewSet):
                 "pass_rate": round(passed / len(pcts) * 100, 1) if pcts else None,
             })
 
+        # Разбор по сим-модулям курса (success = пройдено без аварии).
+        sims_out = []
+        for m in sim_modules:
+            pcts = [v for (uid, mid), v in best_sim.items() if mid == m.id]
+            oks  = [best_sim_ok[(uid, mid)] for (uid, mid) in best_sim if mid == m.id]
+            sims_out.append({
+                "module_id":    m.id,
+                "title":        m.title,
+                "attempted":    len(pcts),
+                "avg_score":    round(sum(pcts) / len(pcts), 1) if pcts else None,
+                "success_rate": round(sum(1 for o in oks if o) / len(oks) * 100, 1) if oks else None,
+            })
+
         all_comp = [e.get_progress_percent() for e in enrollments]
         all_avgs = [a for a in (student_course_avg(e.student_id) for e in enrollments) if a is not None]
+        all_savg = [a for a in (student_sim_avg(e.student_id) for e in enrollments) if a is not None]
         summary = {
             "enrolled":        len(enrollments),
             "completed":       sum(1 for c in all_comp if c >= 100),
             "completion_rate": round(sum(all_comp) / len(all_comp), 1) if all_comp else 0.0,
             "avg_test_score":  round(sum(all_avgs) / len(all_avgs), 1) if all_avgs else None,
+            "avg_sim_score":   round(sum(all_savg) / len(all_savg), 1) if all_savg else None,
             "test_modules":    len(test_modules),
+            "sim_modules":     len(sim_modules),
         }
         return Response({
             "course_id":    course.id,
@@ -166,6 +210,7 @@ class CourseViewSet(viewsets.ModelViewSet):
             "summary":      summary,
             "groups":       groups_out,
             "modules":      modules_out,
+            "sims":         sims_out,
         })
 
 

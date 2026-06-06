@@ -5,115 +5,115 @@
 
   <div class="content">
     <div class="loading" *ngIf="loadingCourses">Загрузка…</div>
+    <div class="empty-data" *ngIf="!loadingCourses && courses.length === 0">Курсов пока нет.</div>
 
-    <ng-container *ngIf="!loadingCourses">
-      <div class="empty-data" *ngIf="courses.length === 0">Курсов пока нет.</div>
-
-      <!-- Выбор курса -->
-      <div class="course-tabs" *ngIf="courses.length > 0">
-        <button *ngFor="let c of courses" class="course-tab"
+    <div class="layout" *ngIf="!loadingCourses && courses.length > 0">
+      <!-- Список курсов слева -->
+      <aside class="course-list">
+        <div class="list-label">Курсы</div>
+        <button *ngFor="let c of courses" class="course-item"
                 [class.active]="selectedCourse?.id === c.id"
                 (click)="selectCourse(c)">
           {{ c.title }}
         </button>
-      </div>
+      </aside>
 
-      <div class="loading" *ngIf="loadingData">Загрузка данных курса…</div>
+      <!-- Аналитика выбранного курса -->
+      <section class="course-data">
+        <div class="loading" *ngIf="loadingData">Загрузка данных курса…</div>
 
-      <ng-container *ngIf="!loadingData && summary">
-        <!-- Сводка -->
-        <div class="metrics">
-          <div class="metric-card">
-            <div class="metric-val">{{ summary.enrolled }}</div>
-            <div class="metric-lbl">Зачислено</div>
+        <ng-container *ngIf="!loadingData && summary">
+          <!-- Сводка -->
+          <div class="metrics">
+            <div class="metric-card">
+              <div class="metric-val">{{ summary.enrolled }}</div>
+              <div class="metric-lbl">Зачислено</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val">{{ summary.completed }}</div>
+              <div class="metric-lbl">Завершили</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val">{{ summary.completion_rate }}%</div>
+              <div class="metric-lbl">Ср. завершение</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val">{{ summary.avg_test_score != null ? summary.avg_test_score + '%' : '—' }}</div>
+              <div class="metric-lbl">Ср. балл тестов</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-val">{{ summary.avg_sim_score != null ? summary.avg_sim_score + '%' : '—' }}</div>
+              <div class="metric-lbl">Ср. балл симуляций</div>
+            </div>
           </div>
-          <div class="metric-card">
-            <div class="metric-val">{{ summary.completed }}</div>
-            <div class="metric-lbl">Завершили</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-val">{{ summary.completion_rate }}%</div>
-            <div class="metric-lbl">Ср. завершение</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-val">{{ summary.avg_test_score != null ? summary.avg_test_score + '%' : '—' }}</div>
-            <div class="metric-lbl">Ср. балл тестов</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-val">{{ summary.test_modules }}</div>
-            <div class="metric-lbl">Тестов в курсе</div>
-          </div>
-        </div>
 
-        <!-- Сравнение групп -->
-        <div class="card">
-          <div class="card-title">Успеваемость по группам</div>
-          <div class="empty-data" *ngIf="groups.length === 0">На курс ещё никто не зачислен.</div>
-          <table class="data-table" *ngIf="groups.length > 0">
-            <thead>
-              <tr>
-                <th>Группа</th>
-                <th>Студентов</th>
-                <th>Завершили</th>
-                <th>Ср. завершение</th>
-                <th>Ср. балл тестов</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let g of groups">
-                <td>
-                  {{ g.name }}
-                  <span class="code" *ngIf="g.code">{{ g.code }}</span>
-                </td>
-                <td>{{ g.students }}</td>
-                <td>{{ g.completed }} / {{ g.students }}</td>
-                <td>
-                  <span class="score-badge" [class]="rateBadge(g.completion_rate)">
-                    {{ g.completion_rate }}%
-                  </span>
-                </td>
-                <td>
-                  <span class="score-badge" [class]="rateBadge(g.avg_test_score)">
-                    {{ g.avg_test_score != null ? g.avg_test_score + '%' : '—' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <!-- Сравнение групп -->
+          <div class="card">
+            <div class="card-title">Успеваемость по группам</div>
+            <div class="empty-data" *ngIf="groups.length === 0">На курс ещё никто не зачислен.</div>
+            <table class="data-table" *ngIf="groups.length > 0">
+              <thead>
+                <tr>
+                  <th>Группа</th>
+                  <th>Студентов</th>
+                  <th>Завершили</th>
+                  <th>Ср. завершение</th>
+                  <th>Ср. тесты</th>
+                  <th>Ср. симуляции</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let g of groups">
+                  <td>{{ g.name }} <span class="code" *ngIf="g.code">{{ g.code }}</span></td>
+                  <td>{{ g.students }}</td>
+                  <td>{{ g.completed }} / {{ g.students }}</td>
+                  <td><span class="score-badge" [class]="rateBadge(g.completion_rate)">{{ g.completion_rate }}%</span></td>
+                  <td><span class="score-badge" [class]="rateBadge(g.avg_test_score)">{{ g.avg_test_score != null ? g.avg_test_score + '%' : '—' }}</span></td>
+                  <td><span class="score-badge" [class]="rateBadge(g.avg_sim_score)">{{ g.avg_sim_score != null ? g.avg_sim_score + '%' : '—' }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-        <!-- Разбор по тестам -->
-        <div class="card">
-          <div class="card-title">Тесты курса</div>
-          <div class="empty-data" *ngIf="modules.length === 0">В курсе нет тестов.</div>
-          <table class="data-table" *ngIf="modules.length > 0">
-            <thead>
-              <tr>
-                <th>Тест</th>
-                <th>Прошли</th>
-                <th>Ср. балл</th>
-                <th>Сдали</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let m of modules">
-                <td>{{ m.title }}</td>
-                <td>{{ m.attempted }}</td>
-                <td>
-                  <span class="score-badge" [class]="rateBadge(m.avg_score)">
-                    {{ m.avg_score != null ? m.avg_score + '%' : '—' }}
-                  </span>
-                </td>
-                <td>
-                  <span class="score-badge" [class]="rateBadge(m.pass_rate)">
-                    {{ m.pass_rate != null ? m.pass_rate + '%' : '—' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </ng-container>
-    </ng-container>
+          <!-- Разбор по тестам -->
+          <div class="card">
+            <div class="card-title">Тесты курса</div>
+            <div class="empty-data" *ngIf="modules.length === 0">В курсе нет тестов.</div>
+            <table class="data-table" *ngIf="modules.length > 0">
+              <thead>
+                <tr><th>Тест</th><th>Прошли</th><th>Ср. балл</th><th>Сдали</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let m of modules">
+                  <td>{{ m.title }}</td>
+                  <td>{{ m.attempted }}</td>
+                  <td><span class="score-badge" [class]="rateBadge(m.avg_score)">{{ m.avg_score != null ? m.avg_score + '%' : '—' }}</span></td>
+                  <td><span class="score-badge" [class]="rateBadge(m.pass_rate)">{{ m.pass_rate != null ? m.pass_rate + '%' : '—' }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Разбор по симуляциям -->
+          <div class="card">
+            <div class="card-title">Симуляции курса</div>
+            <div class="empty-data" *ngIf="sims.length === 0">В курсе нет симуляций.</div>
+            <table class="data-table" *ngIf="sims.length > 0">
+              <thead>
+                <tr><th>Симуляция</th><th>Прошли</th><th>Ср. балл</th><th>Без аварий</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let s of sims">
+                  <td>{{ s.title }}</td>
+                  <td>{{ s.attempted }}</td>
+                  <td><span class="score-badge" [class]="rateBadge(s.avg_score)">{{ s.avg_score != null ? s.avg_score + '%' : '—' }}</span></td>
+                  <td><span class="score-badge" [class]="rateBadge(s.success_rate)">{{ s.success_rate != null ? s.success_rate + '%' : '—' }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+      </section>
+    </div>
   </div>
 </div>
