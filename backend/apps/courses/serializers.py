@@ -33,6 +33,27 @@ def attempt_allowance(module, user):
     }
 
 
+def module_locked(module, user):
+    """True, если модуль закрыт для студента: задан unlock_after и предшественник не завершён.
+
+    Преподаватель/админ не блокируются. Незаписанный студент не блокируется
+    (доступ к курсу решают другие проверки).
+    """
+    if not module.unlock_after_id:
+        return False
+    if getattr(user, "primary_role", None) != "student":
+        return False
+    enrollment = Enrollment.objects.filter(
+        course_id=module.course_id, student=user,
+    ).first()
+    if not enrollment:
+        return False
+    return not ModuleProgress.objects.filter(
+        enrollment=enrollment, module_id=module.unlock_after_id,
+        status=ModuleProgress.Status.COMPLETED,
+    ).exists()
+
+
 def test_passed(module, user):
     """Сдан ли тест пользователем — есть ли попытка с % ≥ проходного балла."""
     settings  = getattr(module, "test_settings", None)
@@ -244,6 +265,10 @@ class TestSubmitSerializer(serializers.Serializer):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             module = CourseModule.objects.get(pk=attrs["module_id"])
+            if module_locked(module, request.user):
+                raise serializers.ValidationError(
+                    "Тест заблокирован: сначала завершите предыдущий модуль."
+                )
             allowance = attempt_allowance(module, request.user)
             if allowance["blocked"]:
                 raise serializers.ValidationError(

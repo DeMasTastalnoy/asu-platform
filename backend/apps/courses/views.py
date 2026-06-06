@@ -16,7 +16,7 @@ from .serializers import (
     CourseModuleSerializer, CourseModuleCreateSerializer,
     EnrollmentSerializer, EnrollmentCreateSerializer,
     TestQuestionSerializer, TestResultSerializer, TestSubmitSerializer,
-    AttemptRequestSerializer, test_passed,
+    AttemptRequestSerializer, test_passed, module_locked,
     StudentGroupSerializer, StudentGroupMemberSerializer,
 )
 
@@ -248,6 +248,16 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
             return CourseModuleCreateSerializer
         return CourseModuleSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        """Студент не может открыть модуль, пока не завершён предшествующий."""
+        module = self.get_object()
+        if module_locked(module, request.user):
+            return Response(
+                {"detail": "Модуль заблокирован: сначала завершите предыдущий."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().retrieve(request, *args, **kwargs)
+
     @action(detail=True, methods=["get"], permission_classes=[IsInstructor])
     def analytics(self, request, pk=None):
         """GET /api/modules/{id}/analytics/ — статистика по тесту (для преподавателя).
@@ -393,6 +403,13 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
     def complete(self, request, pk=None):
         """POST /api/modules/{id}/complete/ — студент завершил модуль."""
         module = self.get_object()
+
+        # Нельзя завершить заблокированный модуль (предшественник не пройден).
+        if module_locked(module, request.user):
+            return Response(
+                {"detail": "Модуль заблокирован: сначала завершите предыдущий."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         # Тест засчитываем завершённым только при сдаче (по проходному баллу).
         if module.type == CourseModule.Type.TEST and not test_passed(module, request.user):

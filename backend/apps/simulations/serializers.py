@@ -69,10 +69,18 @@ class SimulationSubmitSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         from apps.courses.models import Enrollment
+        from apps.courses.serializers import module_locked
         try:
-            SimulationTemplate.objects.get(pk=attrs["simulation_id"])
+            sim = SimulationTemplate.objects.get(pk=attrs["simulation_id"])
         except SimulationTemplate.DoesNotExist:
             raise serializers.ValidationError({"simulation_id": "Симуляция не найдена."})
+
+        # Заблокированный модуль (предшественник не пройден) проходить нельзя.
+        request = self.context.get("request")
+        if request and sim.module_id and module_locked(sim.module, request.user):
+            raise serializers.ValidationError(
+                "Симуляция заблокирована: сначала завершите предыдущий модуль."
+            )
 
         # enrollment_id необязателен — для прямого запуска без курса
         if attrs.get("enrollment_id"):
