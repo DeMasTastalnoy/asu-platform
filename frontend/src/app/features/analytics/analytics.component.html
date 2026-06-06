@@ -1,140 +1,119 @@
 <div class="page">
   <div class="topbar">
-    <span class="page-title">Аналитика и отчёты</span>
+    <span class="page-title">Аналитика курсов</span>
   </div>
 
   <div class="content">
-    <div class="loading" *ngIf="loading">Загрузка данных...</div>
+    <div class="loading" *ngIf="loadingCourses">Загрузка…</div>
 
-    <ng-container *ngIf="!loading">
+    <ng-container *ngIf="!loadingCourses">
+      <div class="empty-data" *ngIf="courses.length === 0">Курсов пока нет.</div>
 
-      <!-- Метрики -->
-      <div class="metrics">
-        <div class="metric-card">
-          <div class="metric-val">{{ courses.length }}</div>
-          <div class="metric-lbl">Курсов</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-val">{{ testResults.length }}</div>
-          <div class="metric-lbl">Попыток тестов</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-val">{{ simResults.length }}</div>
-          <div class="metric-lbl">Прохождений симуляций</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-val">{{ avgTestScore }}</div>
-          <div class="metric-lbl">Ср. балл тестов</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-val">{{ avgSimScore }}</div>
-          <div class="metric-lbl">Ср. балл симуляций</div>
-        </div>
+      <!-- Выбор курса -->
+      <div class="course-tabs" *ngIf="courses.length > 0">
+        <button *ngFor="let c of courses" class="course-tab"
+                [class.active]="selectedCourse?.id === c.id"
+                (click)="selectCourse(c)">
+          {{ c.title }}
+        </button>
       </div>
 
-      <div class="two-col">
+      <div class="loading" *ngIf="loadingData">Загрузка данных курса…</div>
 
-        <!-- Результаты тестов -->
-        <div class="card">
-          <div class="card-title">Результаты тестов</div>
-          <div class="empty-data" *ngIf="testResults.length === 0">
-            Результатов пока нет
+      <ng-container *ngIf="!loadingData && summary">
+        <!-- Сводка -->
+        <div class="metrics">
+          <div class="metric-card">
+            <div class="metric-val">{{ summary.enrolled }}</div>
+            <div class="metric-lbl">Зачислено</div>
           </div>
-          <table class="data-table" *ngIf="testResults.length > 0">
+          <div class="metric-card">
+            <div class="metric-val">{{ summary.completed }}</div>
+            <div class="metric-lbl">Завершили</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">{{ summary.completion_rate }}%</div>
+            <div class="metric-lbl">Ср. завершение</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">{{ summary.avg_test_score != null ? summary.avg_test_score + '%' : '—' }}</div>
+            <div class="metric-lbl">Ср. балл тестов</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">{{ summary.test_modules }}</div>
+            <div class="metric-lbl">Тестов в курсе</div>
+          </div>
+        </div>
+
+        <!-- Сравнение групп -->
+        <div class="card">
+          <div class="card-title">Успеваемость по группам</div>
+          <div class="empty-data" *ngIf="groups.length === 0">На курс ещё никто не зачислен.</div>
+          <table class="data-table" *ngIf="groups.length > 0">
             <thead>
               <tr>
-                <th>Модуль</th>
-                <th>Попытка</th>
-                <th>Балл</th>
-                <th>Время</th>
-                <th>Дата</th>
+                <th>Группа</th>
+                <th>Студентов</th>
+                <th>Завершили</th>
+                <th>Ср. завершение</th>
+                <th>Ср. балл тестов</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of testResults">
-                <td>{{ r.module_title ?? 'Модуль ' + r.module }}</td>
-                <td>{{ r.attempt_num }}</td>
+              <tr *ngFor="let g of groups">
                 <td>
-                  <span class="score-badge"
-                        [class]="getScoreBadgeClass(r.score, r.max_score)">
-                    {{ formatScore(r.score, r.max_score) }}
+                  {{ g.name }}
+                  <span class="code" *ngIf="g.code">{{ g.code }}</span>
+                </td>
+                <td>{{ g.students }}</td>
+                <td>{{ g.completed }} / {{ g.students }}</td>
+                <td>
+                  <span class="score-badge" [class]="rateBadge(g.completion_rate)">
+                    {{ g.completion_rate }}%
                   </span>
                 </td>
-                <td>{{ r.time_spent_sec ? (r.time_spent_sec + ' сек') : '—' }}</td>
-                <td>{{ r.completed_at | date:'dd.MM.yy HH:mm' }}</td>
+                <td>
+                  <span class="score-badge" [class]="rateBadge(g.avg_test_score)">
+                    {{ g.avg_test_score != null ? g.avg_test_score + '%' : '—' }}
+                  </span>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Результаты симуляций -->
+        <!-- Разбор по тестам -->
         <div class="card">
-          <div class="card-title">Результаты симуляций</div>
-          <div class="empty-data" *ngIf="simResults.length === 0">
-            Результатов пока нет
-          </div>
-          <table class="data-table" *ngIf="simResults.length > 0">
+          <div class="card-title">Тесты курса</div>
+          <div class="empty-data" *ngIf="modules.length === 0">В курсе нет тестов.</div>
+          <table class="data-table" *ngIf="modules.length > 0">
             <thead>
               <tr>
-                <th>Симуляция</th>
-                <th>Попытка</th>
-                <th>Действий</th>
-                <th>Балл</th>
-                <th>Время</th>
+                <th>Тест</th>
+                <th>Прошли</th>
+                <th>Ср. балл</th>
+                <th>Сдали</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let r of simResults">
-                <td>{{ r.simulation_name ?? 'Симуляция ' + r.simulation }}</td>
-                <td>{{ r.attempt_num }}</td>
-                <td>{{ r.actions_log?.length ?? 0 }}</td>
+              <tr *ngFor="let m of modules">
+                <td>{{ m.title }}</td>
+                <td>{{ m.attempted }}</td>
                 <td>
-                  <span *ngIf="r.score !== null && r.max_score > 0"
-                        class="score-badge"
-                        [class]="getScoreBadgeClass(r.score, r.max_score)">
-                    {{ formatScore(r.score, r.max_score) }}
+                  <span class="score-badge" [class]="rateBadge(m.avg_score)">
+                    {{ m.avg_score != null ? m.avg_score + '%' : '—' }}
                   </span>
-                  <span *ngIf="r.score === null || r.max_score === 0" class="score-badge badge-gray">—</span>
                 </td>
-                <td>{{ r.time_spent_sec ? (r.time_spent_sec + ' сек') : '—' }}</td>
+                <td>
+                  <span class="score-badge" [class]="rateBadge(m.pass_rate)">
+                    {{ m.pass_rate != null ? m.pass_rate + '%' : '—' }}
+                  </span>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
-
-      </div>
-
-      <!-- Список курсов -->
-      <div class="card">
-        <div class="card-title">Курсы</div>
-        <div class="empty-data" *ngIf="courses.length === 0">Курсов пока нет</div>
-        <table class="data-table" *ngIf="courses.length > 0">
-          <thead>
-            <tr>
-              <th>Название</th>
-              <th>Уровень</th>
-              <th>Модулей</th>
-              <th>Статус</th>
-              <th>Дата создания</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let c of courses">
-              <td>{{ c.title }}</td>
-              <td>{{ c.level }}</td>
-              <td>{{ c.modules_count }}</td>
-              <td>
-                <span class="score-badge"
-                      [class]="c.status === 'published' ? 'badge-green' : 'badge-gray'">
-                  {{ c.status === 'published' ? 'Опубликован' : 'Черновик' }}
-                </span>
-              </td>
-              <td>{{ c.created_at | date:'dd.MM.yy' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
+      </ng-container>
     </ng-container>
   </div>
 </div>

@@ -3,6 +3,34 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 
+interface Course { id: number; title: string; }
+
+interface GroupRow {
+  group_id: number | null;
+  name: string;
+  code: string;
+  students: number;
+  completed: number;
+  completion_rate: number;
+  avg_test_score: number | null;
+}
+
+interface ModuleRow {
+  module_id: number;
+  title: string;
+  attempted: number;
+  avg_score: number | null;
+  pass_rate: number | null;
+}
+
+interface Summary {
+  enrolled: number;
+  completed: number;
+  completion_rate: number;
+  avg_test_score: number | null;
+  test_modules: number;
+}
+
 @Component({
   selector: 'app-analytics',
   standalone: true,
@@ -11,79 +39,48 @@ import { ApiService } from '../../core/services/api.service';
   styleUrl: './analytics.component.scss',
 })
 export class AnalyticsComponent implements OnInit {
-  courses: any[] = [];
-  analytics: any[] = [];
-  testResults: any[] = [];
-  simResults: any[] = [];
-  loading = true;
-  selectedCourse: any = null;
+  courses: Course[] = [];
+  selectedCourse: Course | null = null;
+  loadingCourses = true;
+  loadingData = false;
+
+  summary: Summary | null = null;
+  groups: GroupRow[] = [];
+  modules: ModuleRow[] = [];
 
   constructor(private api: ApiService) {}
 
   ngOnInit(): void {
-    this.loadData();
-  }
-
-  loadData(): void {
     this.api.get<any>('courses/').subscribe({
       next: data => {
-        this.courses = Array.isArray(data) ? data : data.results ?? [];
-        this.loading = false;
-        if (this.courses.length > 0) {
-          this.selectCourse(this.courses[0]);
-        }
+        const list = Array.isArray(data) ? data : data.results ?? [];
+        this.courses = list.map((c: any) => ({ id: c.id, title: c.title }));
+        this.loadingCourses = false;
+        if (this.courses.length > 0) this.selectCourse(this.courses[0]);
       },
-    });
-
-    this.api.get<any>('test-results/').subscribe({
-      next: data => {
-        this.testResults = Array.isArray(data) ? data : data.results ?? [];
-      },
-    });
-
-    this.api.get<any>('simulations/results/').subscribe({
-      next: data => {
-        this.simResults = Array.isArray(data) ? data : data.results ?? [];
-      },
+      error: () => { this.loadingCourses = false; },
     });
   }
 
-  selectCourse(course: any): void {
+  selectCourse(course: Course): void {
     this.selectedCourse = course;
+    this.loadingData = true;
+    this.summary = null; this.groups = []; this.modules = [];
+    this.api.get<any>(`courses/${course.id}/group-analytics/`).subscribe({
+      next: data => {
+        this.summary = data.summary;
+        this.groups  = data.groups ?? [];
+        this.modules = data.modules ?? [];
+        this.loadingData = false;
+      },
+      error: () => { this.loadingData = false; },
+    });
   }
 
-  getCourseTestResults(courseId: number): any[] {
-    return this.testResults.filter(r => r.module?.toString().includes(courseId.toString()));
-  }
-
-  get avgTestScore(): string {
-    if (!this.testResults.length) return '—';
-    const scores = this.testResults
-      .filter(r => r.score !== null && r.max_score > 0)
-      .map(r => r.score / r.max_score * 100);
-    if (!scores.length) return '—';
-    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) + '%';
-  }
-
-  get avgSimScore(): string {
-    if (!this.simResults.length) return '—';
-    const scores = this.simResults
-      .filter(r => r.score !== null && r.max_score > 0)
-      .map(r => r.score / r.max_score * 100);
-    if (!scores.length) return '—';
-    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) + '%';
-  }
-
-  getScoreBadgeClass(score: number, maxScore: number): string {
-    if (!maxScore) return 'badge-gray';
-    const pct = score / maxScore * 100;
-    if (pct >= 80) return 'badge-green';
-    if (pct >= 60) return 'badge-amber';
+  rateBadge(pct: number | null): string {
+    if (pct == null) return 'badge-gray';
+    if (pct >= 75) return 'badge-green';
+    if (pct >= 50) return 'badge-amber';
     return 'badge-red';
-  }
-
-  formatScore(score: number, maxScore: number): string {
-    if (maxScore === 0) return '—';
-    return `${Math.round(score / maxScore * 100)}%`;
   }
 }

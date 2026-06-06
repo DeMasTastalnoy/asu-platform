@@ -82,6 +82,92 @@ class CourseViewSet(viewsets.ModelViewSet):
         course.save(update_fields=["status"])
         return Response({"detail": "Курс опубликован."})
 
+    @action(detail=True, methods=["get"], url_path="group-analytics", permission_classes=[IsInstructor])
+    def group_analytics(self, request, pk=None):
+        """GET /api/courses/{id}/group-analytics/ — успеваемость курса в разрезе групп.
+
+        Сводка по курсу + сравнение учебных групп (завершение, средний балл по
+        тестам) + разбор по модулям-тестам (средний балл, % сдавших).
+        """
+        course = self.get_object()
+        if (request.user.primary_role == "instructor"
+                and course.instructor_id != request.user.id):
+            return Response({"detail": "Это чужой курс."}, status=status.HTTP_403_FORBIDDEN)
+
+        enrollments  = list(Enrollment.objects.filter(course=course).select_related("student", "group"))
+        test_modules = list(course.modules.filter(type=CourseModule.Type.TEST))
+        tm_ids       = [m.id for m in test_modules]
+        thresholds   = {}
+        for m in test_modules:
+            s = getattr(m, "test_settings", None)
+            thresholds[m.id] = float(s.passing_score) if s else 60.0
+
+        # Лучший результат (%) каждого студента по каждому тест-модулю.
+        best = {}  # (user_id, module_id) -> pct
+        if tm_ids:
+            for r in TestResult.objects.filter(module_id__in=tm_ids):
+                pct = r.score_percent
+                if pct is None:
+                    continue
+                key = (r.user_id, r.module_id)
+                if key not in best or pct > best[key]:
+                    best[key] = pct
+
+        def student_course_avg(uid):
+            vals = [best[(uid, mid)] for mid in tm_ids if (uid, mid) in best]
+            return sum(vals) / len(vals) if vals else None
+
+        # Группировка зачислений по учебной группе (None → «Без группы»).
+        from collections import defaultdict
+        by_group = defaultdict(list)
+        for e in enrollments:
+            by_group[e.group].append(e)
+
+        groups_out = []
+        for g, ens in by_group.items():
+            comp = [e.get_progress_percent() for e in ens]
+            avgs = [a for a in (student_course_avg(e.student_id) for e in ens) if a is not None]
+            groups_out.append({
+                "group_id":        g.id if g else None,
+                "name":            g.name if g else "Без группы",
+                "code":            g.code if g else "",
+                "students":        len(ens),
+                "completed":       sum(1 for c in comp if c >= 100),
+                "completion_rate": round(sum(comp) / len(comp), 1) if comp else 0.0,
+                "avg_test_score":  round(sum(avgs) / len(avgs), 1) if avgs else None,
+            })
+        groups_out.sort(key=lambda x: (x["group_id"] is None, -x["completion_rate"]))
+
+        # Разбор по тест-модулям курса.
+        modules_out = []
+        for m in test_modules:
+            pcts = [v for (uid, mid), v in best.items() if mid == m.id]
+            passed = sum(1 for p in pcts if p >= thresholds[m.id])
+            modules_out.append({
+                "module_id": m.id,
+                "title":     m.title,
+                "attempted": len(pcts),
+                "avg_score": round(sum(pcts) / len(pcts), 1) if pcts else None,
+                "pass_rate": round(passed / len(pcts) * 100, 1) if pcts else None,
+            })
+
+        all_comp = [e.get_progress_percent() for e in enrollments]
+        all_avgs = [a for a in (student_course_avg(e.student_id) for e in enrollments) if a is not None]
+        summary = {
+            "enrolled":        len(enrollments),
+            "completed":       sum(1 for c in all_comp if c >= 100),
+            "completion_rate": round(sum(all_comp) / len(all_comp), 1) if all_comp else 0.0,
+            "avg_test_score":  round(sum(all_avgs) / len(all_avgs), 1) if all_avgs else None,
+            "test_modules":    len(test_modules),
+        }
+        return Response({
+            "course_id":    course.id,
+            "course_title": course.title,
+            "summary":      summary,
+            "groups":       groups_out,
+            "modules":      modules_out,
+        })
+
 
 class CourseModuleViewSet(viewsets.ModelViewSet):
     """
