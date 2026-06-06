@@ -109,7 +109,38 @@ export class CourseDetailComponent implements OnInit {
     return module.progress?.status ?? 'not_started';
   }
 
+  get isStudent(): boolean {
+    return this.user()?.primary_role === 'student';
+  }
+
+  /** Модуль завершён? */
+  private isCompleted(module: any): boolean {
+    return this.getProgressStatus(module) === 'completed';
+  }
+
+  /** Модуль заблокирован для студента: задан unlock_after и предшественник не завершён. */
+  isLocked(module: any): boolean {
+    if (!this.isStudent || !module.unlock_after) return false;
+    const prereq = this.modules.find(m => m.id === module.unlock_after);
+    return !!prereq && !this.isCompleted(prereq);
+  }
+
+  /** Название предшествующего модуля (для подсказки на замке). */
+  lockReason(module: any): string {
+    const prereq = this.modules.find(m => m.id === module.unlock_after);
+    return prereq ? prereq.title : '';
+  }
+
+  /** Прогресс курса для студента: завершено обязательных из всех обязательных. */
+  get courseProgress(): number {
+    const required = this.modules.filter(m => m.is_required);
+    if (required.length === 0) return 100;
+    const done = required.filter(m => this.isCompleted(m)).length;
+    return Math.round(done / required.length * 100);
+  }
+
   openModule(module: any): void {
+    if (this.isLocked(module)) return;
     switch (module.type) {
       case 'test':
         this.router.navigate(['/testing', module.id]);

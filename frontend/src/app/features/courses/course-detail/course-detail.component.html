@@ -26,6 +26,11 @@
           <span>Уровень: <strong>{{ course.level }}</strong></span>
           <span>Модулей: <strong>{{ modules.length }}</strong></span>
         </div>
+
+        <div class="course-progress" *ngIf="isStudent && modules.length > 0">
+          <div class="cp-bar"><div class="cp-fill" [style.width.%]="courseProgress"></div></div>
+          <span class="cp-pct">{{ courseProgress }}% пройдено</span>
+        </div>
       </div>
 
       <div class="modules-section">
@@ -49,23 +54,28 @@
 
         <div class="modules-list" *ngIf="modules.length > 0"
              cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListDisabled]="!canReorder">
-          <div class="module-item" *ngFor="let module of modules; let i = index" cdkDrag>
+          <div class="module-item" *ngFor="let module of modules; let i = index" cdkDrag
+               [class.locked]="isLocked(module)">
             <div class="module-placeholder" *cdkDragPlaceholder></div>
             <div class="drag-handle" *ngIf="canReorder" cdkDragHandle title="Перетащить">⠿</div>
-            <div class="module-num">{{ i + 1 }}</div>
+            <div class="module-num">{{ isLocked(module) ? '🔒' : (i + 1) }}</div>
             <div class="module-icon" [class]="'icon-' + getTypeColor(module.type)">
               {{ getTypeLabel(module.type)[0] }}
             </div>
             <div class="module-info">
               <div class="module-title">{{ module.title }}</div>
-              <div class="module-type">{{ getTypeLabel(module.type) }}</div>
+              <div class="module-type">
+                {{ getTypeLabel(module.type) }}
+                <span class="lock-note" *ngIf="isLocked(module)">· доступен после «{{ lockReason(module) }}»</span>
+              </div>
             </div>
-            <div class="module-status" [class]="'progress-' + getProgressStatus(module)">
+            <div class="module-status" [class]="'progress-' + getProgressStatus(module)" *ngIf="!isLocked(module)">
               {{ getProgressStatus(module) === 'completed' ? '✓ Завершён' :
                  getProgressStatus(module) === 'in_progress' ? '→ В процессе' : '○ Не начат' }}
             </div>
+            <div class="module-status locked-label" *ngIf="isLocked(module)">Заблокирован</div>
             <div class="module-actions">
-  <button class="btn-sm" (click)="openModule(module)">Открыть</button>
+  <button class="btn-sm" (click)="openModule(module)" [disabled]="isLocked(module)">Открыть</button>
   <button class="btn-sm btn-sm-outline"
           *ngIf="module.type === 'test' && user()?.primary_role !== 'student'"
           [routerLink]="['/testing', module.id, 'edit']">
