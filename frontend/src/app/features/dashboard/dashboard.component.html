@@ -3,35 +3,59 @@
     <span class="page-title">Дашборд</span>
     <span class="role-badge">{{ user()?.primary_role }}</span>
   </div>
+
   <div class="content">
-    <div class="metrics">
-      <div class="metric-card">
-        <div class="metric-val">{{ stats.courses }}</div>
-        <div class="metric-lbl">Курсов</div>
+    <div class="loading" *ngIf="loading">Загрузка…</div>
+
+    <!-- Студент: Мои курсы -->
+    <ng-container *ngIf="!loading && isStudent">
+      <h2 class="hello">Здравствуйте, {{ user()?.full_name || user()?.username }}!</h2>
+
+      <div class="empty-card" *ngIf="myCourses.length === 0">
+        <p>Вы пока не записаны ни на один курс. Обратитесь к преподавателю.</p>
       </div>
-      <div class="metric-card">
-        <div class="metric-val">—</div>
-        <div class="metric-lbl">Симуляций</div>
+
+      <div class="my-courses" *ngIf="myCourses.length > 0">
+        <div class="mc-card" *ngFor="let c of myCourses" (click)="openCourse(c)">
+          <div class="mc-head">
+            <div class="mc-title">{{ c.title }}</div>
+            <span class="mc-deadline" *ngIf="c.deadline" [class.overdue]="isOverdue(c)">
+              до {{ c.deadline | date:'dd.MM.yy' }}
+            </span>
+          </div>
+
+          <div class="mc-progress">
+            <div class="bar"><div class="fill" [class]="progressClass(c.progress)" [style.width.%]="c.progress"></div></div>
+            <span class="pct">{{ c.progress }}%</span>
+          </div>
+
+          <div class="mc-foot">
+            <span class="mc-state" [class.done]="c.progress >= 100">
+              {{ c.progress >= 100 ? '✓ Курс пройден' : c.progress > 0 ? 'В процессе' : 'Не начат' }}
+            </span>
+            <span class="mc-go">{{ c.progress > 0 && c.progress < 100 ? 'Продолжить →' : 'Открыть →' }}</span>
+          </div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-val">—</div>
-        <div class="metric-lbl">Студентов</div>
+    </ng-container>
+
+    <!-- Преподаватель / админ -->
+    <ng-container *ngIf="!loading && !isStudent">
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-val">{{ stats.courses }}</div>
+          <div class="metric-lbl">Курсов</div>
+        </div>
       </div>
-      <div class="metric-card">
-        <div class="metric-val">—</div>
-        <div class="metric-lbl">Ср. успеваемость</div>
+      <div class="welcome-card">
+        <h2>Добро пожаловать, {{ user()?.full_name || user()?.username }}!</h2>
+        <p>Платформа дистанционного обучения операторов АСУ готова к работе.</p>
+        <div class="quick-actions">
+          <a routerLink="/courses" class="action-btn">Перейти к курсам</a>
+          <a routerLink="/simulator" class="action-btn outline">Открыть конструктор</a>
+          <a routerLink="/analytics" class="action-btn outline">Аналитика</a>
+        </div>
       </div>
-    </div>
-    <div class="welcome-card">
-      <h2>Добро пожаловать, {{ user()?.full_name || user()?.username }}!</h2>
-      <p>Платформа дистанционного обучения операторов АСУ готова к работе.</p>
-      <div class="quick-actions">
-        <a routerLink="/courses" class="action-btn">Перейти к курсам</a>
-        <a routerLink="/simulator" class="action-btn outline"
-           *ngIf="user()?.primary_role !== 'student'">
-          Открыть конструктор
-        </a>
-      </div>
-    </div>
+    </ng-container>
   </div>
 </div>
