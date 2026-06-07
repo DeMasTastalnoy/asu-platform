@@ -37,6 +37,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        # Роль выше «студента» может назначить только администратор (через UserViewSet).
+        # Публичная регистрация (AllowAny) всегда создаёт обычного студента —
+        # иначе любой мог бы зарегистрироваться админом.
+        request  = self.context.get("request")
+        is_admin = bool(
+            request and request.user.is_authenticated
+            and request.user.primary_role == User.Role.ADMIN
+        )
+        if not is_admin:
+            validated_data["primary_role"] = User.Role.STUDENT
         user = User.objects.create_user(**validated_data)
         UserRole.objects.create(user=user, role=user.primary_role)
         return user
