@@ -36,9 +36,13 @@
          *ngIf="user()?.primary_role !== 'student'">
         <span class="nav-icon">📊</span> Аналитика
       </a>
-      <a class="nav-item" routerLink="/admin" routerLinkActive="active"
+      <a class="nav-item" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
          *ngIf="user()?.primary_role === 'admin'">
         <span class="nav-icon">👤</span> Пользователи
+      </a>
+      <a class="nav-item" routerLink="/admin/diplomas" routerLinkActive="active"
+         *ngIf="user()?.primary_role === 'admin'">
+        <span class="nav-icon">🎓</span> Дипломы
       </a>
     </div>
 
