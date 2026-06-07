@@ -16,6 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
         model  = User
         fields = (
             "id", "username", "email", "full_name",
+            "birth_year", "passport", "snils", "reg_address",
             "primary_role", "is_active", "last_login_at",
             "created_at", "roles",
         )
@@ -44,7 +45,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
-        fields = ("full_name", "email", "primary_role", "is_active")
+        fields = (
+            "full_name", "email", "primary_role", "is_active",
+            "birth_year", "passport", "snils", "reg_address",
+        )
 
 
 class ChangePasswordSerializer(serializers.Serializer):

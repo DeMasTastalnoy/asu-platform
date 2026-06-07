@@ -52,6 +52,16 @@
   }
 }
 
+.toggle-sensitive {
+  background: transparent; border: none; color: #185FA5; cursor: pointer;
+  font-size: 13px; font-weight: 500; padding: 4px 0; margin-bottom: 12px;
+  &:hover { text-decoration: underline; }
+}
+.sensitive {
+  border: 1px dashed #ddd; border-radius: 8px; padding: 14px 14px 0;
+  margin-bottom: 14px; background: #fafafa;
+}
+
 .error-msg {
   background: #FCEBEB; color: #A32D2D; padding: 8px 12px;
   border-radius: 6px; font-size: 13px; margin-bottom: 12px;

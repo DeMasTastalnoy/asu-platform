@@ -28,6 +28,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     username      = models.CharField("Логин", max_length=50, unique=True)
     email         = models.EmailField("Email", max_length=100, unique=True)
     full_name     = models.CharField("ФИО", max_length=100, blank=True)
+    # Персональные данные (для оформления документов об обучении)
+    birth_year    = models.CharField("Год рождения", max_length=4, blank=True)
+    passport      = models.CharField("Паспортные данные", max_length=60, blank=True)
+    snils         = models.CharField("СНИЛС", max_length=20, blank=True)
+    reg_address   = models.CharField("Адрес прописки", max_length=300, blank=True)
     primary_role  = models.CharField(
         "Основная роль", max_length=20,
         choices=Role.choices, default=Role.STUDENT,

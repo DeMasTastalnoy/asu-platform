@@ -22,6 +22,15 @@ export class ProfileComponent implements OnInit {
   savedPassword = false;
   error = '';
   errorPassword = '';
+  showSensitive = false;
+
+  /** Заглушки для незаполненных полей (по форме, не реальные данные). */
+  private readonly STUBS: Record<string, string> = {
+    birth_year:  '2000',
+    passport:    '12 34 567890',
+    snils:       '123-456-789 01',
+    reg_address: 'г. Москва, ул. Примерная, д. 1, кв. 1',
+  };
 
   constructor(
     private api: ApiService,
@@ -34,8 +43,12 @@ export class ProfileComponent implements OnInit {
   ngOnInit(): void {
     const u = this.user();
     this.form = this.fb.group({
-      full_name: [u?.full_name ?? '', Validators.required],
-      email:     [u?.email ?? '',     [Validators.required, Validators.email]],
+      full_name:   [u?.full_name ?? '', Validators.required],
+      email:       [u?.email ?? '',     [Validators.required, Validators.email]],
+      birth_year:  [u?.birth_year  || this.STUBS['birth_year']],
+      passport:    [u?.passport    || this.STUBS['passport']],
+      snils:       [u?.snils       || this.STUBS['snils']],
+      reg_address: [u?.reg_address || this.STUBS['reg_address']],
     });
 
     this.passwordForm = this.fb.group({

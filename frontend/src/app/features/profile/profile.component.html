@@ -46,6 +46,30 @@
               <label>Email</label>
               <input type="email" formControlName="email" placeholder="email@example.com"/>
             </div>
+            <div class="field">
+              <label>Год рождения</label>
+              <input type="text" formControlName="birth_year" maxlength="4" placeholder="ГГГГ"/>
+            </div>
+
+            <button type="button" class="toggle-sensitive" (click)="showSensitive = !showSensitive">
+              {{ showSensitive ? '▾ Скрыть документы' : '▸ Паспорт, СНИЛС, прописка' }}
+            </button>
+
+            <div class="sensitive" *ngIf="showSensitive">
+              <div class="field">
+                <label>Паспортные данные</label>
+                <input type="text" formControlName="passport" placeholder="серия и номер"/>
+              </div>
+              <div class="field">
+                <label>СНИЛС</label>
+                <input type="text" formControlName="snils" placeholder="000-000-000 00"/>
+              </div>
+              <div class="field">
+                <label>Адрес прописки</label>
+                <input type="text" formControlName="reg_address" placeholder="город, улица, дом, кв."/>
+              </div>
+            </div>
+
             <div class="error-msg" *ngIf="error">{{ error }}</div>
             <div class="form-footer">
               <span class="saved-msg" *ngIf="saved">✓ Сохранено</span>
