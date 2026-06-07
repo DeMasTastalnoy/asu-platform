@@ -24,6 +24,10 @@
          *ngIf="user()?.primary_role === 'student'">
         <span class="nav-icon">🏅</span> Мои результаты
       </a>
+      <a class="nav-item" routerLink="/achievements" routerLinkActive="active"
+         *ngIf="user()?.primary_role === 'student'">
+        <span class="nav-icon">🎓</span> Достижения
+      </a>
       <a class="nav-item" routerLink="/groups" routerLinkActive="active"
          *ngIf="user()?.primary_role !== 'student'">
         <span class="nav-icon">👥</span> Группы

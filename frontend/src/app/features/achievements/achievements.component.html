@@ -1,0 +1,98 @@
+<div class="page">
+  <div class="topbar">
+    <span class="page-title">Мои достижения</span>
+  </div>
+
+  <div class="content">
+    <div class="loading" *ngIf="loading">Загрузка…</div>
+
+    <ng-container *ngIf="!loading">
+      <!-- Сводка -->
+      <div class="metrics" *ngIf="summary">
+        <div class="metric-card">
+          <div class="metric-val">{{ summary.avg_progress }}%</div>
+          <div class="metric-lbl">Средний прогресс</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ summary.courses }}</div>
+          <div class="metric-lbl">Курсов</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ summary.tests_done }} / {{ summary.tests_total }}</div>
+          <div class="metric-lbl">Тестов пройдено</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ summary.sims_done }} / {{ summary.sims_total }}</div>
+          <div class="metric-lbl">Симуляций пройдено</div>
+        </div>
+      </div>
+
+      <div class="empty" *ngIf="courses.length === 0">Вы пока не записаны на курсы.</div>
+
+      <!-- Курсы -->
+      <div class="course" *ngFor="let c of courses">
+        <div class="c-main">
+          <div class="c-title">{{ c.course_title }}</div>
+          <div class="c-stats">
+            <span>Тесты: {{ c.tests_done }}/{{ c.tests_total }}</span>
+            <span class="dot">·</span>
+            <span>Симуляции: {{ c.sims_done }}/{{ c.sims_total }}</span>
+            <span class="dot" *ngIf="c.final_score != null">·</span>
+            <span *ngIf="c.final_score != null">Итоговый балл: {{ c.final_score }}%</span>
+          </div>
+          <div class="c-progress">
+            <div class="bar"><div class="fill" [class.done]="c.completed" [style.width.%]="c.progress"></div></div>
+            <span class="pct" [class.done]="c.completed">{{ c.progress }}%</span>
+          </div>
+        </div>
+
+        <div class="c-actions">
+          <!-- Сертификат -->
+          <button class="btn cert" *ngIf="c.completed" (click)="downloadCert(c)" [disabled]="c.busyCert">
+            {{ c.busyCert ? 'Формирование…' : (c.certificate ? 'Скачать сертификат' : 'Сформировать и скачать сертификат') }}
+          </button>
+          <button class="btn disabled" *ngIf="!c.completed" disabled>Сертификат — завершите курс</button>
+
+          <!-- Диплом -->
+          <ng-container *ngIf="c.completed">
+            <button class="btn diploma" *ngIf="!c.diploma" (click)="openDiploma(c)">Получить диплом</button>
+            <span class="diploma-status" *ngIf="c.diploma"
+                  [class.issued]="c.diploma.status === 'issued'"
+                  [class.rejected]="c.diploma.status === 'rejected'">
+              {{ diplomaLabel(c.diploma) }}
+            </span>
+          </ng-container>
+          <button class="btn disabled" *ngIf="!c.completed" disabled>Диплом — завершите курс</button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Модалка заявки на диплом -->
+  <div class="modal-overlay" *ngIf="showDiploma" (click)="closeDiploma()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-title">Заявка на диплом</div>
+      <p class="modal-sub">«{{ diplomaCourse?.course_title }}». Проверьте данные — диплом будет
+        оформлен и в течение 10 дней выслан на указанную почту.</p>
+
+      <label class="field">
+        <span class="field-label">ФИО</span>
+        <input type="text" [(ngModel)]="dName" maxlength="150" />
+      </label>
+      <label class="field">
+        <span class="field-label">Email для отправки</span>
+        <input type="email" [(ngModel)]="dEmail" maxlength="150" />
+      </label>
+
+      <div class="modal-error" *ngIf="diplomaError">{{ diplomaError }}</div>
+
+      <div class="modal-actions">
+        <button class="btn-sm" (click)="closeDiploma()">Отмена</button>
+        <button class="btn diploma" (click)="submitDiploma()"
+                [disabled]="!dName.trim() || !dEmail.trim() || diplomaSending">
+          {{ diplomaSending ? 'Отправка…' : 'Подтвердить и отправить заявку' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

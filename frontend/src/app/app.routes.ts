@@ -47,6 +47,12 @@ export const routes: Routes = [
           import('./features/results/results.routes').then(m => m.RESULTS_ROUTES),
       },
       {
+        path: 'achievements',
+        canActivate: [roleGuard(['student'])],
+        loadChildren: () =>
+          import('./features/achievements/achievements.routes').then(m => m.ACHIEVEMENTS_ROUTES),
+      },
+      {
         path: 'analytics',
         canActivate: [roleGuard(['admin', 'instructor'])],
         loadChildren: () =>
