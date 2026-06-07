@@ -7,16 +7,24 @@
     <div class="loading" *ngIf="loading">Загрузка…</div>
 
     <ng-container *ngIf="!loading">
+      <div class="filter-bar" *ngIf="courseOptions.length > 1">
+        <span class="filter-label">Курс:</span>
+        <select [(ngModel)]="courseFilter">
+          <option [ngValue]="null">Все курсы</option>
+          <option *ngFor="let c of courseOptions" [ngValue]="c.id">{{ c.title }}</option>
+        </select>
+      </div>
+
       <!-- Тесты -->
       <div class="card">
-        <div class="card-title">Тесты <span class="muted-count" *ngIf="tests.length">{{ tests.length }}</span></div>
-        <div class="empty" *ngIf="tests.length === 0">Вы ещё не проходили тесты.</div>
-        <table class="data-table" *ngIf="tests.length > 0">
+        <div class="card-title">Тесты <span class="muted-count" *ngIf="filteredTests.length">{{ filteredTests.length }}</span></div>
+        <div class="empty" *ngIf="filteredTests.length === 0">Нет пройденных тестов.</div>
+        <table class="data-table" *ngIf="filteredTests.length > 0">
           <thead>
             <tr><th>Тест</th><th class="num">Попыток</th><th class="num">Лучший</th><th class="num">Статус</th><th class="num">Последняя</th></tr>
           </thead>
           <tbody>
-            <tr *ngFor="let t of tests">
+            <tr *ngFor="let t of filteredTests">
               <td>{{ t.title }}</td>
               <td class="num muted">{{ t.attempts }}</td>
               <td class="num"><span class="badge" [class]="pctBadge(t.best_pct)">{{ t.best_pct }}%</span></td>
@@ -31,14 +39,14 @@
 
       <!-- Симуляции -->
       <div class="card">
-        <div class="card-title">Симуляции <span class="muted-count" *ngIf="sims.length">{{ sims.length }}</span></div>
-        <div class="empty" *ngIf="sims.length === 0">Вы ещё не проходили симуляции.</div>
-        <table class="data-table" *ngIf="sims.length > 0">
+        <div class="card-title">Симуляции <span class="muted-count" *ngIf="filteredSims.length">{{ filteredSims.length }}</span></div>
+        <div class="empty" *ngIf="filteredSims.length === 0">Нет пройденных симуляций.</div>
+        <table class="data-table" *ngIf="filteredSims.length > 0">
           <thead>
             <tr><th>Симуляция</th><th class="num">Попыток</th><th class="num">Лучший</th><th class="num">Итог</th><th class="num">Последняя</th></tr>
           </thead>
           <tbody>
-            <tr *ngFor="let s of sims">
+            <tr *ngFor="let s of filteredSims">
               <td>{{ s.title }}</td>
               <td class="num muted">{{ s.attempts }}</td>
               <td class="num"><span class="badge" [class]="pctBadge(s.best_pct)">{{ s.best_pct != null ? s.best_pct + '%' : '—' }}</span></td>

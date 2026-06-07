@@ -65,6 +65,9 @@ export class TestListComponent implements OnInit {
   requests: AttemptRequestRow[] = [];
   resolvingId: number | null = null;
 
+  // Фильтр по курсу
+  courseFilter: number | null = null;
+
   constructor(
     private api:    ApiService,
     private auth:   AuthService,
@@ -76,6 +79,19 @@ export class TestListComponent implements OnInit {
   get isInstructor(): boolean {
     const role = this.user()?.primary_role;
     return role === 'instructor' || role === 'admin';
+  }
+
+  /** Список курсов из загруженных тестов (для фильтра). */
+  get testCourses(): { id: number; title: string }[] {
+    const seen = new Map<number, string>();
+    for (const t of this.tests) if (!seen.has(t.course)) seen.set(t.course, t.course_title);
+    return [...seen.entries()].map(([id, title]) => ({ id, title }));
+  }
+
+  get filteredTests(): TestModule[] {
+    return this.courseFilter == null
+      ? this.tests
+      : this.tests.filter(t => t.course === this.courseFilter);
   }
 
   ngOnInit(): void {

@@ -45,8 +45,16 @@
         <button class="btn-primary" *ngIf="isInstructor" (click)="openCreate()">+ Создать тест</button>
       </div>
 
+      <div class="filter-bar" *ngIf="tests.length > 0 && testCourses.length > 1">
+        <span class="filter-label">Курс:</span>
+        <select [(ngModel)]="courseFilter">
+          <option [ngValue]="null">Все курсы</option>
+          <option *ngFor="let c of testCourses" [ngValue]="c.id">{{ c.title }}</option>
+        </select>
+      </div>
+
       <div class="test-list" *ngIf="tests.length > 0">
-        <div class="test-item" *ngFor="let t of tests">
+        <div class="test-item" *ngFor="let t of filteredTests">
           <div class="test-main">
             <div class="test-title">{{ t.title }}</div>
             <div class="test-meta">
@@ -60,6 +68,9 @@
             <button class="btn-sm btn-sm-outline" *ngIf="isInstructor" (click)="analytics(t)">Аналитика</button>
             <button class="btn-sm" (click)="play(t)" [disabled]="t.question_count === 0">Пройти</button>
           </div>
+        </div>
+        <div class="empty" *ngIf="filteredTests.length === 0">
+          <p>В выбранном курсе тестов нет.</p>
         </div>
       </div>
     </ng-container>

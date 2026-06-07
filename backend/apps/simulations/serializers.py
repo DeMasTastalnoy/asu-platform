@@ -30,17 +30,27 @@ class SimulationResultSerializer(serializers.ModelSerializer):
     student_name    = serializers.CharField(source="enrollment.student.full_name", read_only=True)
     simulation_name = serializers.CharField(source="simulation.name", read_only=True)
     score_percent   = serializers.FloatField(read_only=True)
+    course_id       = serializers.SerializerMethodField()
+    course_title    = serializers.SerializerMethodField()
 
     class Meta:
         model  = SimulationResult
         fields = (
             "id", "simulation", "simulation_name", "enrollment",
-            "student_name", "attempt_num",
+            "student_name", "attempt_num", "course_id", "course_title",
             "score", "max_score", "score_percent",
             "actions_log", "deviations",
             "errors_count", "completed", "safety_tripped", "alarm_count",
             "time_spent_sec", "started_at", "completed_at",
         )
+
+    def get_course_id(self, obj):
+        m = obj.simulation.module
+        return m.course_id if m else None
+
+    def get_course_title(self, obj):
+        m = obj.simulation.module
+        return m.course.title if m else None
         read_only_fields = (
             "id", "attempt_num", "score", "max_score",
             "deviations", "started_at",
