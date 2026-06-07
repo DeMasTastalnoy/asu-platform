@@ -3,22 +3,23 @@ import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 
-interface TestRow {
-  module_title: string;
-  attempt_num: number;
-  score: number;
-  max_score: number;
-  pct: number;
-  completed_at: string | null;
+interface TestAgg {
+  module_id: number;
+  title: string;
+  attempts: number;
+  best_pct: number;
+  passing: number;
+  passed: boolean;
+  last_at: string | null;
 }
 
-interface SimRow {
-  simulation_name: string;
-  attempt_num: number;
-  pct: number | null;
-  completed: boolean;
-  safety_tripped: boolean;
-  completed_at: string | null;
+interface SimAgg {
+  sim_id: number;
+  title: string;
+  attempts: number;
+  best_pct: number | null;
+  best_ok: boolean;   // лучший проход без аварии
+  last_at: string | null;
 }
 
 @Component({
@@ -29,8 +30,8 @@ interface SimRow {
   styleUrl: './results.component.scss',
 })
 export class ResultsComponent implements OnInit {
-  tests: TestRow[] = [];
-  sims: SimRow[] = [];
+  tests: TestAgg[] = [];
+  sims: SimAgg[] = [];
   loading = true;
 
   constructor(private api: ApiService) {}
@@ -41,28 +42,51 @@ export class ResultsComponent implements OnInit {
       sims:  this.api.get<any>('simulations/results/'),
     }).subscribe({
       next: ({ tests, sims }) => {
-        const tl = Array.isArray(tests) ? tests : tests.results ?? [];
-        const sl = Array.isArray(sims) ? sims : sims.results ?? [];
-        this.tests = tl.map((r: any) => ({
-          module_title: r.module_title ?? ('Тест ' + r.module),
-          attempt_num:  r.attempt_num,
-          score:        r.score,
-          max_score:    r.max_score,
-          pct:          r.max_score ? Math.round(r.score / r.max_score * 100) : 0,
-          completed_at: r.completed_at,
-        })).sort((a: TestRow, b: TestRow) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''));
-        this.sims = sl.map((r: any) => ({
-          simulation_name: r.simulation_name ?? ('Симуляция ' + r.simulation),
-          attempt_num:     r.attempt_num,
-          pct:             r.score_percent ?? null,
-          completed:       r.completed,
-          safety_tripped:  r.safety_tripped,
-          completed_at:    r.completed_at,
-        })).sort((a: SimRow, b: SimRow) => (b.completed_at ?? '').localeCompare(a.completed_at ?? ''));
+        this.tests = this.aggregateTests(Array.isArray(tests) ? tests : tests.results ?? []);
+        this.sims  = this.aggregateSims(Array.isArray(sims) ? sims : sims.results ?? []);
         this.loading = false;
       },
       error: () => { this.loading = false; },
     });
+  }
+
+  private aggregateTests(rows: any[]): TestAgg[] {
+    const map = new Map<number, TestAgg>();
+    for (const r of rows) {
+      const pct = r.max_score ? Math.round(r.score / r.max_score * 100) : 0;
+      const passing = r.passing_score ?? 60;
+      let a = map.get(r.module);
+      if (!a) {
+        a = { module_id: r.module, title: r.module_title ?? ('Тест ' + r.module),
+              attempts: 0, best_pct: 0, passing, passed: false, last_at: null };
+        map.set(r.module, a);
+      }
+      a.attempts++;
+      if (pct > a.best_pct) a.best_pct = pct;
+      a.passed = a.best_pct >= a.passing;
+      if (!a.last_at || (r.completed_at ?? '') > a.last_at) a.last_at = r.completed_at ?? null;
+    }
+    return [...map.values()].sort((x, y) => Number(x.passed) - Number(y.passed) || y.best_pct - x.best_pct);
+  }
+
+  private aggregateSims(rows: any[]): SimAgg[] {
+    const map = new Map<number, SimAgg>();
+    for (const r of rows) {
+      const pct = r.score_percent ?? null;
+      let a = map.get(r.simulation);
+      if (!a) {
+        a = { sim_id: r.simulation, title: r.simulation_name ?? ('Симуляция ' + r.simulation),
+              attempts: 0, best_pct: null, best_ok: false, last_at: null };
+        map.set(r.simulation, a);
+      }
+      a.attempts++;
+      if (pct != null && (a.best_pct == null || pct > a.best_pct)) {
+        a.best_pct = pct;
+        a.best_ok  = !!r.completed && !r.safety_tripped;
+      }
+      if (!a.last_at || (r.completed_at ?? '') > a.last_at) a.last_at = r.completed_at ?? null;
+    }
+    return [...map.values()].sort((x, y) => (y.best_pct ?? -1) - (x.best_pct ?? -1));
   }
 
   pctBadge(pct: number | null): string {

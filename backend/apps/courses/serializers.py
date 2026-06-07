@@ -244,15 +244,20 @@ class TestQuestionSerializer(serializers.ModelSerializer):
 class TestResultSerializer(serializers.ModelSerializer):
     score_percent = serializers.FloatField(read_only=True)
     module_title  = serializers.CharField(source="module.title", read_only=True)
+    passing_score = serializers.SerializerMethodField()
 
     class Meta:
         model  = TestResult
         fields = (
             "id", "user", "module", "module_title", "attempt_num",
-            "score", "max_score", "score_percent",
+            "score", "max_score", "score_percent", "passing_score",
             "answers", "time_spent_sec",
             "started_at", "completed_at",
         )
+
+    def get_passing_score(self, obj):
+        s = getattr(obj.module, "test_settings", None)
+        return float(s.passing_score) if s else 60.0
         read_only_fields = ("id", "started_at", "attempt_num", "score", "max_score")
 
 

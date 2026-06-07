@@ -9,19 +9,21 @@
     <ng-container *ngIf="!loading">
       <!-- Тесты -->
       <div class="card">
-        <div class="card-title">Тесты</div>
+        <div class="card-title">Тесты <span class="muted-count" *ngIf="tests.length">{{ tests.length }}</span></div>
         <div class="empty" *ngIf="tests.length === 0">Вы ещё не проходили тесты.</div>
         <table class="data-table" *ngIf="tests.length > 0">
           <thead>
-            <tr><th>Тест</th><th>Попытка</th><th>Балл</th><th>Результат</th><th>Дата</th></tr>
+            <tr><th>Тест</th><th class="num">Попыток</th><th class="num">Лучший</th><th class="num">Статус</th><th class="num">Последняя</th></tr>
           </thead>
           <tbody>
-            <tr *ngFor="let r of tests">
-              <td>{{ r.module_title }}</td>
-              <td>№{{ r.attempt_num }}</td>
-              <td class="muted">{{ r.score }} / {{ r.max_score }}</td>
-              <td><span class="badge" [class]="pctBadge(r.pct)">{{ r.pct }}%</span></td>
-              <td class="muted">{{ r.completed_at ? (r.completed_at | date:'dd.MM.yy HH:mm') : '—' }}</td>
+            <tr *ngFor="let t of tests">
+              <td>{{ t.title }}</td>
+              <td class="num muted">{{ t.attempts }}</td>
+              <td class="num"><span class="badge" [class]="pctBadge(t.best_pct)">{{ t.best_pct }}%</span></td>
+              <td class="num">
+                <span class="status" [class.passed]="t.passed">{{ t.passed ? '✓ Сдан' : '✗ Не сдан' }}</span>
+              </td>
+              <td class="num muted">{{ t.last_at ? (t.last_at | date:'dd.MM.yy') : '—' }}</td>
             </tr>
           </tbody>
         </table>
@@ -29,23 +31,21 @@
 
       <!-- Симуляции -->
       <div class="card">
-        <div class="card-title">Симуляции</div>
+        <div class="card-title">Симуляции <span class="muted-count" *ngIf="sims.length">{{ sims.length }}</span></div>
         <div class="empty" *ngIf="sims.length === 0">Вы ещё не проходили симуляции.</div>
         <table class="data-table" *ngIf="sims.length > 0">
           <thead>
-            <tr><th>Симуляция</th><th>Попытка</th><th>Результат</th><th>Статус</th><th>Дата</th></tr>
+            <tr><th>Симуляция</th><th class="num">Попыток</th><th class="num">Лучший</th><th class="num">Итог</th><th class="num">Последняя</th></tr>
           </thead>
           <tbody>
-            <tr *ngFor="let r of sims">
-              <td>{{ r.simulation_name }}</td>
-              <td>№{{ r.attempt_num }}</td>
-              <td><span class="badge" [class]="pctBadge(r.pct)">{{ r.pct != null ? r.pct + '%' : '—' }}</span></td>
-              <td>
-                <span class="tag" [class.danger]="r.safety_tripped" [class.ok]="!r.safety_tripped && r.completed">
-                  {{ r.safety_tripped ? '⚠ Авария' : (r.completed ? '✓ Без аварий' : 'Не завершено') }}
-                </span>
+            <tr *ngFor="let s of sims">
+              <td>{{ s.title }}</td>
+              <td class="num muted">{{ s.attempts }}</td>
+              <td class="num"><span class="badge" [class]="pctBadge(s.best_pct)">{{ s.best_pct != null ? s.best_pct + '%' : '—' }}</span></td>
+              <td class="num">
+                <span class="status" [class.passed]="s.best_ok">{{ s.best_ok ? '✓ Без аварий' : '⚠ С авариями' }}</span>
               </td>
-              <td class="muted">{{ r.completed_at ? (r.completed_at | date:'dd.MM.yy HH:mm') : '—' }}</td>
+              <td class="num muted">{{ s.last_at ? (s.last_at | date:'dd.MM.yy') : '—' }}</td>
             </tr>
           </tbody>
         </table>
