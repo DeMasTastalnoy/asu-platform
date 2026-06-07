@@ -62,11 +62,17 @@
 }
 .modal-title { font-size: 16px; font-weight: 600; color: #222; }
 .modal-sub { font-size: 13px; color: #777; line-height: 1.5; margin: 0; }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field-label { font-size: 12px; color: #777; }
-.field input {
-  padding: 8px 10px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px;
-  &:focus { outline: none; border-color: #185FA5; }
+.verify {
+  background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.v-row { display: flex; gap: 12px; }
+.v-label { font-size: 12px; color: #999; width: 60px; flex-shrink: 0; }
+.v-value { font-size: 14px; color: #222; font-weight: 500; }
+.edit-link { font-size: 12px; color: #185FA5; text-decoration: none; &:hover { text-decoration: underline; } }
+.confirm {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: #444; cursor: pointer;
+  input { width: 16px; height: 16px; cursor: pointer; }
 }
 .modal-error { background: #FCEBEB; color: #A32D2D; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }

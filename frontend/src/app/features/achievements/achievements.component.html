@@ -71,17 +71,19 @@
   <!-- Модалка заявки на диплом -->
   <div class="modal-overlay" *ngIf="showDiploma" (click)="closeDiploma()">
     <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-title">Заявка на диплом</div>
-      <p class="modal-sub">«{{ diplomaCourse?.course_title }}». Проверьте данные — диплом будет
-        оформлен и в течение 10 дней выслан на указанную почту.</p>
+      <div class="modal-title">Заявка на диплом — сверка данных</div>
+      <p class="modal-sub">«{{ diplomaCourse?.course_title }}». Диплом будет оформлен на указанные
+        ниже данные и в течение 10 дней выслан на почту. Проверьте их корректность.</p>
 
-      <label class="field">
-        <span class="field-label">ФИО</span>
-        <input type="text" [(ngModel)]="dName" maxlength="150" />
-      </label>
-      <label class="field">
-        <span class="field-label">Email для отправки</span>
-        <input type="email" [(ngModel)]="dEmail" maxlength="150" />
+      <div class="verify">
+        <div class="v-row"><span class="v-label">ФИО</span><span class="v-value">{{ profileName || '— не указано —' }}</span></div>
+        <div class="v-row"><span class="v-label">Email</span><span class="v-value">{{ profileEmail || '— не указано —' }}</span></div>
+      </div>
+      <a routerLink="/profile" class="edit-link" (click)="closeDiploma()">Изменить данные в профиле →</a>
+
+      <label class="confirm">
+        <input type="checkbox" [(ngModel)]="confirmed" />
+        <span>Подтверждаю, что указанные данные верны</span>
       </label>
 
       <div class="modal-error" *ngIf="diplomaError">{{ diplomaError }}</div>
@@ -89,8 +91,8 @@
       <div class="modal-actions">
         <button class="btn-sm" (click)="closeDiploma()">Отмена</button>
         <button class="btn diploma" (click)="submitDiploma()"
-                [disabled]="!dName.trim() || !dEmail.trim() || diplomaSending">
-          {{ diplomaSending ? 'Отправка…' : 'Подтвердить и отправить заявку' }}
+                [disabled]="!confirmed || diplomaSending">
+          {{ diplomaSending ? 'Отправка…' : 'Отправить заявку' }}
         </button>
       </div>
     </div>

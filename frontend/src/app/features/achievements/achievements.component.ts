@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -45,7 +46,7 @@ interface Summary {
 @Component({
   selector: 'app-achievements',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './achievements.component.html',
   styleUrl: './achievements.component.scss',
 })
@@ -58,11 +59,10 @@ export class AchievementsComponent implements OnInit {
   loading = true;
   user: any;
 
-  // Модалка заявки на диплом
+  // Модалка заявки на диплом (сверка данных из профиля)
   showDiploma = false;
   diplomaCourse: CourseAch | null = null;
-  dName = '';
-  dEmail = '';
+  confirmed = false;
   diplomaSending = false;
   diplomaError = '';
 
@@ -104,10 +104,12 @@ export class AchievementsComponent implements OnInit {
   }
 
   // ── Диплом ───────────────────────────────────────────────
+  get profileName(): string { return this.user()?.full_name || ''; }
+  get profileEmail(): string { return this.user()?.email || ''; }
+
   openDiploma(c: CourseAch): void {
     this.diplomaCourse = c;
-    this.dName = this.user()?.full_name || '';
-    this.dEmail = this.user()?.email || '';
+    this.confirmed = false;
     this.diplomaError = '';
     this.showDiploma = true;
   }
@@ -115,13 +117,17 @@ export class AchievementsComponent implements OnInit {
   closeDiploma(): void { this.showDiploma = false; }
 
   submitDiploma(): void {
-    if (!this.diplomaCourse || !this.dName.trim() || !this.dEmail.trim() || this.diplomaSending) return;
+    if (!this.diplomaCourse || !this.confirmed || this.diplomaSending) return;
+    if (!this.profileName.trim() || !this.profileEmail.trim()) {
+      this.diplomaError = 'В профиле не заполнены ФИО или email.';
+      return;
+    }
     this.diplomaSending = true;
     this.diplomaError = '';
     this.api.post<any>('analytics/diploma-requests/', {
       enrollment: this.diplomaCourse.enrollment_id,
-      full_name:  this.dName.trim(),
-      email:      this.dEmail.trim(),
+      full_name:  this.profileName.trim(),
+      email:      this.profileEmail.trim(),
     }).subscribe({
       next: dipl => {
         this.diplomaCourse!.diploma = dipl;
