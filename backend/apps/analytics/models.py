@@ -43,12 +43,13 @@ class CourseAnalytics(models.Model):
 
 
 class Certificate(models.Model):
-    """Документ о завершении курса (требование ФЗ-273, ст. 60)."""
+    """Сертификат о завершении курса (формируется автоматически студентом)."""
 
     enrollment  = models.OneToOneField(
         Enrollment, on_delete=models.CASCADE,
         related_name="certificate",
     )
+    number      = models.CharField("Рег. номер", max_length=40, blank=True, db_index=True)
     final_score = models.DecimalField(
         "Итоговый балл", max_digits=5, decimal_places=2,
         null=True, blank=True,
@@ -63,6 +64,45 @@ class Certificate(models.Model):
 
     def __str__(self):
         return (
-            f"Сертификат: {self.enrollment.student} / "
+            f"Сертификат {self.number}: {self.enrollment.student} / "
             f"{self.enrollment.course} ({self.issued_at:%d.%m.%Y})"
         )
+
+
+class DiplomaRequest(models.Model):
+    """Заявка студента на диплом о завершении курса (оформляется администратором)."""
+    class Status(models.TextChoices):
+        PENDING  = "pending",  "Новая"
+        ISSUED   = "issued",   "Оформлен"
+        REJECTED = "rejected", "Отклонена"
+
+    enrollment    = models.OneToOneField(
+        Enrollment, on_delete=models.CASCADE,
+        related_name="diploma_request",
+    )
+    full_name     = models.CharField("ФИО (подтверждённое)", max_length=150)
+    email         = models.EmailField("Email (подтверждённый)", max_length=150)
+    status        = models.CharField(
+        "Статус", max_length=20,
+        choices=Status.choices, default=Status.PENDING,
+    )
+    number        = models.CharField("Рег. номер диплома", max_length=40, blank=True)
+    final_score   = models.DecimalField(
+        "Итоговый балл", max_digits=5, decimal_places=2, null=True, blank=True,
+    )
+    comment       = models.CharField("Комментарий", max_length=300, blank=True)
+    requested_at  = models.DateTimeField(auto_now_add=True)
+    issued_at     = models.DateTimeField(null=True, blank=True)
+    issued_by     = models.ForeignKey(
+        "users.User", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="issued_diplomas",
+    )
+
+    class Meta:
+        db_table     = "diploma_requests"
+        ordering     = ["-requested_at"]
+        verbose_name = "Заявка на диплом"
+        verbose_name_plural = "Заявки на дипломы"
+
+    def __str__(self):
+        return f"Диплом [{self.status}]: {self.full_name} / {self.enrollment.course}"
