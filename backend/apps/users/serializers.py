@@ -43,10 +43,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
+    """Редактирование своего/чужого профиля. Роль и активность сюда НЕ входят —
+    их меняет только администратор через assign_role/toggle_active (IsAdmin),
+    иначе студент мог бы PATCH-нуть себе primary_role=admin."""
     class Meta:
         model  = User
         fields = (
-            "full_name", "email", "primary_role", "is_active",
+            "full_name", "email",
             "birth_year", "passport", "snils", "reg_address",
         )
 
