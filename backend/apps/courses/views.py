@@ -166,10 +166,19 @@ class CourseViewSet(viewsets.ModelViewSet):
             })
         groups_out.sort(key=lambda x: (x["group_id"] is None, -x["completion_rate"]))
 
-        # Разбор по тест-модулям курса.
+        # Фильтр детальной части (сводка/тесты/симуляции/студенты) по группе.
+        # Сравнение групп (groups_out) остаётся глобальным.
+        group_param = request.query_params.get("group")
+        detail_enr  = enrollments
+        if group_param and group_param.isdigit():
+            gid = int(group_param)
+            detail_enr = [e for e in enrollments if e.group_id == gid]
+        detail_ids = {e.student_id for e in detail_enr}
+
+        # Разбор по тест-модулям курса (в пределах выбранных студентов).
         modules_out = []
         for m in test_modules:
-            pcts = [v for (uid, mid), v in best.items() if mid == m.id]
+            pcts = [v for (uid, mid), v in best.items() if mid == m.id and uid in detail_ids]
             passed = sum(1 for p in pcts if p >= thresholds[m.id])
             modules_out.append({
                 "module_id": m.id,
@@ -182,8 +191,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         # Разбор по сим-модулям курса (success = пройдено без аварии).
         sims_out = []
         for m in sim_modules:
-            pcts = [v for (uid, mid), v in best_sim.items() if mid == m.id]
-            oks  = [best_sim_ok[(uid, mid)] for (uid, mid) in best_sim if mid == m.id]
+            pcts = [v for (uid, mid), v in best_sim.items() if mid == m.id and uid in detail_ids]
+            oks  = [best_sim_ok[(uid, mid)] for (uid, mid) in best_sim
+                    if mid == m.id and uid in detail_ids]
             sims_out.append({
                 "module_id":    m.id,
                 "title":        m.title,
@@ -192,11 +202,28 @@ class CourseViewSet(viewsets.ModelViewSet):
                 "success_rate": round(sum(1 for o in oks if o) / len(oks) * 100, 1) if oks else None,
             })
 
-        all_comp = [e.get_progress_percent() for e in enrollments]
-        all_avgs = [a for a in (student_course_avg(e.student_id) for e in enrollments) if a is not None]
-        all_savg = [a for a in (student_sim_avg(e.student_id) for e in enrollments) if a is not None]
+        # Разбивка по студентам (с учётом фильтра).
+        students_out = []
+        for e in detail_enr:
+            at = student_course_avg(e.student_id)
+            asim = student_sim_avg(e.student_id)
+            prog = e.get_progress_percent()
+            students_out.append({
+                "student_id":  e.student_id,
+                "name":        e.student.full_name or e.student.username,
+                "group":       e.group.name if e.group else "—",
+                "progress":    prog,
+                "avg_test":    round(at, 1) if at is not None else None,
+                "avg_sim":     round(asim, 1) if asim is not None else None,
+                "completed":   prog >= 100,
+            })
+        students_out.sort(key=lambda s: -s["progress"])
+
+        all_comp = [e.get_progress_percent() for e in detail_enr]
+        all_avgs = [a for a in (student_course_avg(e.student_id) for e in detail_enr) if a is not None]
+        all_savg = [a for a in (student_sim_avg(e.student_id) for e in detail_enr) if a is not None]
         summary = {
-            "enrolled":        len(enrollments),
+            "enrolled":        len(detail_enr),
             "completed":       sum(1 for c in all_comp if c >= 100),
             "completion_rate": round(sum(all_comp) / len(all_comp), 1) if all_comp else 0.0,
             "avg_test_score":  round(sum(all_avgs) / len(all_avgs), 1) if all_avgs else None,
@@ -207,10 +234,12 @@ class CourseViewSet(viewsets.ModelViewSet):
         return Response({
             "course_id":    course.id,
             "course_title": course.title,
+            "group":        int(group_param) if (group_param and group_param.isdigit()) else None,
             "summary":      summary,
             "groups":       groups_out,
             "modules":      modules_out,
             "sims":         sims_out,
+            "students":     students_out,
         })
 
 

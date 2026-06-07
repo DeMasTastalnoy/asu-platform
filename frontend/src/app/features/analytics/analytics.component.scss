@@ -59,6 +59,20 @@
 
 .empty-data { font-size: 13px; color: #bbb; text-align: center; padding: 20px 0; }
 
+.filter-bar { display: flex; align-items: center; gap: 10px; }
+.filter-label { font-size: 13px; color: #777; }
+.filter-bar select {
+  padding: 7px 10px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; background: #fff; color: #222;
+  &:focus { outline: none; border-color: #185FA5; }
+}
+.muted-count { font-size: 12px; font-weight: 600; color: #bbb; margin-left: 6px; }
+.status-pill {
+  font-size: 12px; font-weight: 500; color: #854F0B; background: #FAEEDA;
+  padding: 2px 8px; border-radius: 10px;
+  &.done { color: #3B6D11; background: #EAF3DE; }
+}
+.data-table .muted { color: #999; }
+
 .data-table {
   width: 100%; border-collapse: collapse; font-size: 13px;
   th {

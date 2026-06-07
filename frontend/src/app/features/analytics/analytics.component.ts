@@ -1,9 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 
 interface Course { id: number; title: string; }
+
+interface StudentRow {
+  student_id: number;
+  name: string;
+  group: string;
+  progress: number;
+  avg_test: number | null;
+  avg_sim: number | null;
+  completed: boolean;
+}
 
 interface GroupRow {
   group_id: number | null;
@@ -45,7 +56,7 @@ interface Summary {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.scss',
 })
@@ -59,8 +70,17 @@ export class AnalyticsComponent implements OnInit {
   groups: GroupRow[] = [];
   modules: ModuleRow[] = [];
   sims: SimRow[] = [];
+  students: StudentRow[] = [];
+  groupFilter: number | null = null;
 
   constructor(private api: ApiService) {}
+
+  /** Реальные группы (без «Без группы») для выпадающего фильтра. */
+  get groupOptions(): { id: number; name: string }[] {
+    return this.groups
+      .filter(g => g.group_id != null)
+      .map(g => ({ id: g.group_id as number, name: g.name }));
+  }
 
   ngOnInit(): void {
     this.api.get<any>('courses/').subscribe({
@@ -76,14 +96,26 @@ export class AnalyticsComponent implements OnInit {
 
   selectCourse(course: Course): void {
     this.selectedCourse = course;
+    this.groupFilter = null;
+    this.loadData();
+  }
+
+  onGroupChange(): void {
+    this.loadData();
+  }
+
+  loadData(): void {
+    if (!this.selectedCourse) return;
     this.loadingData = true;
-    this.summary = null; this.groups = []; this.modules = []; this.sims = [];
-    this.api.get<any>(`courses/${course.id}/group-analytics/`).subscribe({
+    this.summary = null; this.modules = []; this.sims = []; this.students = [];
+    const params: Record<string, string> = this.groupFilter ? { group: String(this.groupFilter) } : {};
+    this.api.get<any>(`courses/${this.selectedCourse.id}/group-analytics/`, params).subscribe({
       next: data => {
-        this.summary = data.summary;
-        this.groups  = data.groups ?? [];
-        this.modules = data.modules ?? [];
-        this.sims    = data.sims ?? [];
+        this.summary  = data.summary;
+        this.groups   = data.groups ?? [];
+        this.modules  = data.modules ?? [];
+        this.sims     = data.sims ?? [];
+        this.students = data.students ?? [];
         this.loadingData = false;
       },
       error: () => { this.loadingData = false; },
