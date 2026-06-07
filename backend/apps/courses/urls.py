@@ -4,6 +4,7 @@ from .views import (
     CourseViewSet, CourseModuleViewSet, EnrollmentViewSet,
     TestQuestionViewSet, TestSubmitView, TestResultViewSet,
     AttemptRequestViewSet, StudentGroupViewSet,
+    ModuleUploadView, ModuleParseTextView,
 )
 
 router = DefaultRouter()
@@ -16,6 +17,8 @@ router.register("attempt-requests", AttemptRequestViewSet, basename="attempt-req
 router.register("groups",           StudentGroupViewSet,  basename="group")
 
 urlpatterns = [
-    path("tests/submit/", TestSubmitView.as_view(), name="test-submit"),
+    path("tests/submit/",       TestSubmitView.as_view(),     name="test-submit"),
+    path("modules/upload/",     ModuleUploadView.as_view(),   name="module-upload"),
+    path("modules/parse-text/", ModuleParseTextView.as_view(), name="module-parse-text"),
     path("", include(router.urls)),
 ]

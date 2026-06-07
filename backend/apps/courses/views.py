@@ -1,6 +1,16 @@
+import os
+import uuid
+
+import bleach
+import markdown as md_lib
 from rest_framework import viewsets, generics, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.utils.html import escape
 from django.utils import timezone
 
 from apps.users.permissions import IsAdmin, IsInstructor, IsInstructorOrReadOnly
@@ -567,6 +577,74 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return [IsInstructor()]
         return [permissions.IsAuthenticated()]
+
+
+class ModuleUploadView(APIView):
+    """POST /api/modules/upload/ — загрузка файла модуля (документ/видео). Возвращает URL."""
+    permission_classes = [IsInstructor]
+    parser_classes     = [MultiPartParser, FormParser]
+
+    ALLOWED  = {
+        ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".txt", ".rtf",
+        ".mp4", ".webm", ".ogg", ".mov", ".m4v",
+        ".png", ".jpg", ".jpeg", ".gif",
+    }
+    MAX_SIZE = 200 * 1024 * 1024  # 200 МБ
+
+    def post(self, request):
+        f = request.FILES.get("file")
+        if not f:
+            return Response({"detail": "Файл не передан."}, status=status.HTTP_400_BAD_REQUEST)
+        ext = os.path.splitext(f.name)[1].lower()
+        if ext not in self.ALLOWED:
+            return Response({"detail": f"Недопустимый тип файла: {ext or '—'}"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if f.size > self.MAX_SIZE:
+            return Response({"detail": "Файл слишком большой (макс. 200 МБ)."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        stored = default_storage.save(f"module_files/{uuid.uuid4().hex}{ext}", f)
+        return Response({
+            "url":  settings.MEDIA_URL + stored,
+            "name": f.name,
+            "ext":  ext.lstrip("."),
+        }, status=status.HTTP_201_CREATED)
+
+
+# Разрешённые теги/атрибуты при импорте текста (защита от XSS).
+_ALLOWED_TAGS = [
+    "p", "br", "hr", "strong", "b", "em", "i", "u", "s", "blockquote",
+    "h1", "h2", "h3", "h4", "ul", "ol", "li", "a", "code", "pre", "span",
+    "table", "thead", "tbody", "tr", "th", "td",
+]
+_ALLOWED_ATTRS = {"a": ["href", "title", "target", "rel"]}
+
+
+class ModuleParseTextView(APIView):
+    """POST /api/modules/parse-text/ — импорт текста лекции (.md/.html/.txt) → безопасный HTML."""
+    permission_classes = [IsInstructor]
+    parser_classes     = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        f = request.FILES.get("file")
+        if not f:
+            return Response({"detail": "Файл не передан."}, status=status.HTTP_400_BAD_REQUEST)
+        if f.size > 5 * 1024 * 1024:
+            return Response({"detail": "Текстовый файл слишком большой (макс. 5 МБ)."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        ext = os.path.splitext(f.name)[1].lower()
+        raw = f.read().decode("utf-8", errors="replace")
+
+        if ext == ".md":
+            html = md_lib.markdown(raw, extensions=["extra", "sane_lists", "nl2br"])
+        elif ext in (".html", ".htm"):
+            html = raw
+        else:  # .txt и прочее
+            html = "".join(
+                f"<p>{escape(line)}</p>" for line in raw.splitlines() if line.strip()
+            )
+
+        clean = bleach.clean(html, tags=_ALLOWED_TAGS, attributes=_ALLOWED_ATTRS, strip=True)
+        return Response({"html": clean})
 
 
 class TestQuestionViewSet(viewsets.ModelViewSet):
