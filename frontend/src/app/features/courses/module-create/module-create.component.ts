@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
@@ -25,6 +25,19 @@ export class ModuleCreateComponent implements OnInit {
 
   /** Опубликованные симуляции для привязки к модулю типа «Симуляция». */
   simulations: { id: number; name: string; module: number | null }[] = [];
+
+  // Загрузка файла (документ/видео) и импорт текста лекции
+  uploading    = false;
+  uploadError  = '';
+  uploadedName = '';
+  importing    = false;
+
+  /** Контейнер WYSIWYG-редактора лекции. */
+  private editorEl?: ElementRef<HTMLElement>;
+  @ViewChild('editor') set editorRef(el: ElementRef<HTMLElement> | undefined) {
+    this.editorEl = el;
+    if (el) el.nativeElement.innerHTML = this.form.get('content')?.value || '';
+  }
 
   get isEdit(): boolean { return !!this.moduleId; }
 
@@ -85,6 +98,9 @@ export class ModuleCreateComponent implements OnInit {
           order_num:   mod.order_num ?? 0,
           is_required: mod.is_required ?? true,
         });
+        if (mod.file_url) {
+          this.uploadedName = decodeURIComponent(String(mod.file_url).split('/').pop() || 'Файл');
+        }
         if (mod.type === 'simulation') {
           this.api.get<any>(`simulations/templates/?module_id=${this.moduleId}`).subscribe({
             next: data => {
@@ -112,6 +128,77 @@ export class ModuleCreateComponent implements OnInit {
 
   get selectedType(): string {
     return this.form.get('type')?.value;
+  }
+
+  // ── WYSIWYG-редактор лекции ──────────────────────────────
+  /** Команда форматирования (execCommand) с последующей синхронизацией в форму. */
+  exec(cmd: string, value: string | null = null): void {
+    this.editorEl?.nativeElement.focus();
+    document.execCommand(cmd, false, value ?? undefined);
+    this.syncEditor();
+  }
+
+  /** Вставка ссылки. */
+  insertLink(): void {
+    const url = prompt('Адрес ссылки (URL):');
+    if (url) this.exec('createLink', url);
+  }
+
+  /** Синхронизирует HTML редактора в форм-контрол content. */
+  syncEditor(): void {
+    if (this.editorEl) {
+      this.form.get('content')?.setValue(this.editorEl.nativeElement.innerHTML, { emitEvent: false });
+    }
+  }
+
+  // ── Импорт текста лекции (.md/.html/.txt) ────────────────
+  onImportText(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (!file) return;
+    this.importing  = true;
+    this.uploadError = '';
+    const fd = new FormData();
+    fd.append('file', file);
+    this.api.post<any>('modules/parse-text/', fd).subscribe({
+      next: res => {
+        const html = res.html ?? '';
+        this.form.get('content')?.setValue(html, { emitEvent: false });
+        if (this.editorEl) this.editorEl.nativeElement.innerHTML = html;
+        this.importing = false;
+        input.value = '';
+      },
+      error: () => { this.importing = false; this.uploadError = 'Не удалось импортировать файл.'; input.value = ''; },
+    });
+  }
+
+  // ── Загрузка файла модуля (документ/видео) ───────────────
+  onFileUpload(ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (!file) return;
+    this.uploading   = true;
+    this.uploadError = '';
+    const fd = new FormData();
+    fd.append('file', file);
+    this.api.post<any>('modules/upload/', fd).subscribe({
+      next: res => {
+        this.form.get('file_url')?.setValue(res.url);
+        this.uploadedName = res.name;
+        this.uploading = false;
+        input.value = '';
+      },
+      error: err => {
+        this.uploading = false;
+        this.uploadError = err.error?.detail ?? 'Не удалось загрузить файл.';
+        input.value = '';
+      },
+    });
+  }
+
+  clearFile(): void {
+    this.form.get('file_url')?.setValue('');
+    this.uploadedName = '';
   }
 
   submit(): void {

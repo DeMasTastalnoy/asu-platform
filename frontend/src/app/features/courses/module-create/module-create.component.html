@@ -35,14 +35,52 @@
 
         <div class="field" *ngIf="selectedType === 'lecture'">
           <label>Содержимое лекции</label>
-          <textarea formControlName="content" rows="8"
-                    placeholder="Текст лекции в формате HTML или Markdown..."></textarea>
+          <div class="editor-toolbar">
+            <button type="button" (click)="exec('bold')" title="Жирный"><b>Ж</b></button>
+            <button type="button" (click)="exec('italic')" title="Курсив"><i>К</i></button>
+            <button type="button" (click)="exec('underline')" title="Подчёркнутый"><u>П</u></button>
+            <span class="tb-sep"></span>
+            <button type="button" (click)="exec('formatBlock', 'H2')" title="Заголовок">H2</button>
+            <button type="button" (click)="exec('formatBlock', 'H3')" title="Подзаголовок">H3</button>
+            <button type="button" (click)="exec('formatBlock', 'P')" title="Абзац">¶</button>
+            <span class="tb-sep"></span>
+            <button type="button" (click)="exec('insertUnorderedList')" title="Маркированный список">•&nbsp;—</button>
+            <button type="button" (click)="exec('insertOrderedList')" title="Нумерованный список">1.&nbsp;—</button>
+            <button type="button" (click)="insertLink()" title="Ссылка">🔗</button>
+            <button type="button" (click)="exec('removeFormat')" title="Очистить формат">✕</button>
+            <span class="tb-spacer"></span>
+            <label class="import-btn">
+              {{ importing ? 'Импорт…' : '⬆ Импорт текста' }}
+              <input type="file" accept=".md,.markdown,.html,.htm,.txt"
+                     (change)="onImportText($event)" hidden [disabled]="importing"/>
+            </label>
+          </div>
+          <div #editor class="wysiwyg" contenteditable="true" (input)="syncEditor()"></div>
+          <div class="field-hint">Форматируйте текст кнопками; можно импортировать готовый файл .md / .html / .txt.</div>
         </div>
 
         <div class="field" *ngIf="selectedType === 'video' || selectedType === 'document'">
-          <label>Ссылка на файл / видео</label>
-          <input type="text" formControlName="file_url"
-                 placeholder="https://..."/>
+          <label>{{ selectedType === 'video' ? 'Видеофайл' : 'Документ' }}</label>
+
+          <div class="upload-row" *ngIf="!form.get('file_url')?.value">
+            <label class="upload-btn">
+              {{ uploading ? 'Загрузка…' : '⬆ Загрузить файл' }}
+              <input type="file" hidden [disabled]="uploading" (change)="onFileUpload($event)"
+                     [accept]="selectedType === 'video'
+                               ? 'video/*'
+                               : '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.rtf'"/>
+            </label>
+            <span class="upload-hint">
+              {{ selectedType === 'video' ? 'mp4, webm, mov…' : 'pdf, doc, ppt, xls…' }} · до 200 МБ
+            </span>
+          </div>
+
+          <div class="uploaded" *ngIf="form.get('file_url')?.value">
+            <span class="file-name">📎 {{ uploadedName || 'Файл загружен' }}</span>
+            <button type="button" class="btn-link" (click)="clearFile()">Заменить</button>
+          </div>
+
+          <div class="upload-error" *ngIf="uploadError">{{ uploadError }}</div>
         </div>
 
         <div class="field" *ngIf="selectedType === 'simulation'">
