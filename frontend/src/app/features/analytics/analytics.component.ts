@@ -73,6 +73,11 @@ export class AnalyticsComponent implements OnInit {
   students: StudentRow[] = [];
   groupFilter: number | null = null;
 
+  // Drill-down по студенту
+  showStudent = false;
+  studentLoading = false;
+  studentDetail: any = null;
+
   constructor(private api: ApiService) {}
 
   /** Реальные группы (без «Без группы») для выпадающего фильтра. */
@@ -121,6 +126,19 @@ export class AnalyticsComponent implements OnInit {
       error: () => { this.loadingData = false; },
     });
   }
+
+  openStudent(s: StudentRow): void {
+    if (!this.selectedCourse) return;
+    this.showStudent = true;
+    this.studentLoading = true;
+    this.studentDetail = null;
+    this.api.get<any>(`courses/${this.selectedCourse.id}/student-detail/`, { student: String(s.student_id) }).subscribe({
+      next: data => { this.studentDetail = data; this.studentLoading = false; },
+      error: () => { this.studentLoading = false; },
+    });
+  }
+
+  closeStudent(): void { this.showStudent = false; }
 
   rateBadge(pct: number | null): string {
     if (pct == null) return 'badge-gray';

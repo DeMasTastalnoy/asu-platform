@@ -242,6 +242,80 @@ class CourseViewSet(viewsets.ModelViewSet):
             "students":     students_out,
         })
 
+    @action(detail=True, methods=["get"], url_path="student-detail", permission_classes=[IsInstructor])
+    def student_detail(self, request, pk=None):
+        """GET /api/courses/{id}/student-detail/?student=<id> — детализация по студенту."""
+        course = self.get_object()
+        if (request.user.primary_role == "instructor"
+                and course.instructor_id != request.user.id):
+            return Response({"detail": "Это чужой курс."}, status=status.HTTP_403_FORBIDDEN)
+
+        student_id = request.query_params.get("student")
+        enrollment = Enrollment.objects.filter(
+            course=course, student_id=student_id,
+        ).select_related("student", "group").first()
+        if not enrollment:
+            return Response({"detail": "Студент не записан на курс."},
+                            status=status.HTTP_404_NOT_FOUND)
+        student = enrollment.student
+
+        # Тесты курса по студенту.
+        tests_out = []
+        for m in course.modules.filter(type=CourseModule.Type.TEST):
+            s = getattr(m, "test_settings", None)
+            threshold = float(s.passing_score) if s else 60.0
+            rs = list(m.test_results.filter(user=student))
+            pcts = [r.score_percent for r in rs if r.score_percent is not None]
+            best = max(pcts) if pcts else None
+            last = max((r.completed_at or r.started_at for r in rs), default=None)
+            tests_out.append({
+                "module_id": m.id,
+                "title":     m.title,
+                "attempts":  len(rs),
+                "best_pct":  round(best, 1) if best is not None else None,
+                "passing":   threshold,
+                "passed":    best is not None and best >= threshold,
+                "last_at":   last,
+            })
+
+        # Симуляции курса по студенту.
+        sims_out = []
+        sim_modules = list(course.modules.filter(type=CourseModule.Type.SIMULATION))
+        sim_results = SimulationResult.objects.filter(
+            simulation__module__course=course, enrollment__student=student,
+        ).select_related("simulation")
+        by_mod = {}
+        for r in sim_results:
+            by_mod.setdefault(r.simulation.module_id, []).append(r)
+        for m in sim_modules:
+            rs = by_mod.get(m.id, [])
+            pcts = [r.score_percent for r in rs if r.score_percent is not None]
+            best = max(pcts) if pcts else None
+            best_ok = False
+            if best is not None:
+                for r in rs:
+                    if r.score_percent == best:
+                        best_ok = bool(r.completed and not r.safety_tripped)
+                        break
+            last = max((r.completed_at or r.started_at for r in rs), default=None)
+            sims_out.append({
+                "module_id": m.id,
+                "title":     m.title,
+                "attempts":  len(rs),
+                "best_pct":  round(best, 1) if best is not None else None,
+                "success":   best_ok,
+                "last_at":   last,
+            })
+
+        return Response({
+            "student_id": student.id,
+            "name":       student.full_name or student.username,
+            "group":      enrollment.group.name if enrollment.group else "—",
+            "progress":   enrollment.get_progress_percent(),
+            "tests":      tests_out,
+            "sims":       sims_out,
+        })
+
 
 class CourseModuleViewSet(viewsets.ModelViewSet):
     """

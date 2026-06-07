@@ -72,6 +72,26 @@
   &.done { color: #3B6D11; background: #EAF3DE; }
 }
 .data-table .muted { color: #999; }
+.data-table tr.clickable { cursor: pointer; }
+
+/* Модалка drill-down */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.4);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal {
+  background: #fff; border-radius: 12px; padding: 22px; width: 100%; max-width: 620px;
+  max-height: 85vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,.2);
+}
+.modal-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+.modal-title { font-size: 17px; font-weight: 600; color: #222; }
+.modal-sub { font-size: 13px; color: #888; margin-top: 4px; }
+.modal-x {
+  border: none; background: transparent; font-size: 16px; color: #999; cursor: pointer;
+  padding: 2px 6px; border-radius: 6px; &:hover { background: #f0f0f0; color: #333; }
+}
+.dd-section { margin-bottom: 18px; &:last-child { margin-bottom: 0; } }
+.dd-label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 8px; }
 
 .data-table {
   width: 100%; border-collapse: collapse; font-size: 13px;

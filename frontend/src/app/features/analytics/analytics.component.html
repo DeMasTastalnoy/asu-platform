@@ -131,7 +131,7 @@
                 <tr><th>Студент</th><th>Группа</th><th>Прогресс</th><th>Ср. тесты</th><th>Ср. симуляции</th><th>Статус</th></tr>
               </thead>
               <tbody>
-                <tr *ngFor="let s of students">
+                <tr *ngFor="let s of students" class="clickable" (click)="openStudent(s)">
                   <td>{{ s.name }}</td>
                   <td class="muted">{{ s.group }}</td>
                   <td><span class="score-badge" [class]="rateBadge(s.progress)">{{ s.progress }}%</span></td>
@@ -144,6 +144,57 @@
           </div>
         </ng-container>
       </section>
+    </div>
+  </div>
+
+  <!-- Drill-down: детализация по студенту -->
+  <div class="modal-overlay" *ngIf="showStudent" (click)="closeStudent()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="loading" *ngIf="studentLoading">Загрузка…</div>
+
+      <ng-container *ngIf="!studentLoading && studentDetail">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title">{{ studentDetail.name }}</div>
+            <div class="modal-sub">Группа: {{ studentDetail.group }} · Прогресс: {{ studentDetail.progress }}%</div>
+          </div>
+          <button class="modal-x" (click)="closeStudent()">✕</button>
+        </div>
+
+        <div class="dd-section">
+          <div class="dd-label">Тесты</div>
+          <div class="empty-data" *ngIf="studentDetail.tests.length === 0">Тестов в курсе нет.</div>
+          <table class="data-table" *ngIf="studentDetail.tests.length > 0">
+            <thead><tr><th>Тест</th><th>Попыток</th><th>Лучший</th><th>Статус</th><th>Последняя</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let t of studentDetail.tests">
+                <td>{{ t.title }}</td>
+                <td>{{ t.attempts }}</td>
+                <td><span class="score-badge" [class]="rateBadge(t.best_pct)">{{ t.best_pct != null ? t.best_pct + '%' : '—' }}</span></td>
+                <td><span class="status-pill" [class.done]="t.passed">{{ t.attempts === 0 ? '—' : (t.passed ? 'Сдан' : 'Не сдан') }}</span></td>
+                <td class="muted">{{ t.last_at ? (t.last_at | date:'dd.MM.yy') : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dd-section">
+          <div class="dd-label">Симуляции</div>
+          <div class="empty-data" *ngIf="studentDetail.sims.length === 0">Симуляций в курсе нет.</div>
+          <table class="data-table" *ngIf="studentDetail.sims.length > 0">
+            <thead><tr><th>Симуляция</th><th>Попыток</th><th>Лучший</th><th>Итог</th><th>Последняя</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let s of studentDetail.sims">
+                <td>{{ s.title }}</td>
+                <td>{{ s.attempts }}</td>
+                <td><span class="score-badge" [class]="rateBadge(s.best_pct)">{{ s.best_pct != null ? s.best_pct + '%' : '—' }}</span></td>
+                <td><span class="status-pill" [class.done]="s.success">{{ s.attempts === 0 ? '—' : (s.success ? 'Без аварий' : 'С авариями') }}</span></td>
+                <td class="muted">{{ s.last_at ? (s.last_at | date:'dd.MM.yy') : '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>
