@@ -15,6 +15,10 @@ _FONT_REG  = "CertSans"
 _FONT_BOLD = "CertSans-Bold"
 _fonts_ready: tuple | None = None
 
+# Организация-эмитент (печатается на документах).
+ORG_NAME = "АСУ-Платформа"
+ORG_SUB  = "Дистанционное обучение операторов АСУ ТП"
+
 # Кандидаты TTF с поддержкой кириллицы (Windows / Linux).
 _REG_CANDIDATES  = [r"C:\Windows\Fonts\arial.ttf",
                     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
@@ -112,9 +116,17 @@ def render_certificate_pdf(cert) -> str:
     c.setLineWidth(3); c.rect(15 * mm, 15 * mm, w - 30 * mm, h - 30 * mm)
     c.setLineWidth(1); c.rect(18 * mm, 18 * mm, w - 36 * mm, h - 36 * mm)
 
+    # Шапка организации
+    c.setFillColorRGB(0.09, 0.37, 0.65)
+    c.setFont(bold, 15)
+    c.drawCentredString(w / 2, h - 32 * mm, ORG_NAME)
+    c.setFillColorRGB(0.45, 0.45, 0.45)
+    c.setFont(reg, 10)
+    c.drawCentredString(w / 2, h - 38 * mm, ORG_SUB)
+
     c.setFillColorRGB(0.09, 0.37, 0.65)
     c.setFont(bold, 40)
-    c.drawCentredString(w / 2, h - 55 * mm, "СЕРТИФИКАТ")
+    c.drawCentredString(w / 2, h - 60 * mm, "СЕРТИФИКАТ")
 
     c.setFillColorRGB(0.25, 0.25, 0.25)
     c.setFont(reg, 14)
