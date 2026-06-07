@@ -12,29 +12,30 @@
 
       <!-- Видео -->
       <div class="video-wrap" *ngIf="module.type === 'video' && module.file_url">
-        <iframe [src]="module.file_url" frameborder="0" allowfullscreen></iframe>
+        <video [src]="fileUrl()" controls preload="metadata"></video>
       </div>
 
-      <!-- Документ / ссылка -->
-      <div class="doc-link" *ngIf="module.type === 'document' && module.file_url">
-        <a [href]="module.file_url" target="_blank" class="btn-primary">
-          📄 Открыть документ
-        </a>
-      </div>
+      <!-- Документ -->
+      <ng-container *ngIf="module.type === 'document' && module.file_url">
+        <div class="doc-preview" *ngIf="isPdf">
+          <iframe [src]="safeDocUrl" title="Документ"></iframe>
+        </div>
+        <div class="doc-link">
+          <a [href]="fileUrl()" target="_blank" class="btn-primary">📄 Открыть / скачать документ</a>
+        </div>
+      </ng-container>
 
-      <!-- Лекция — HTML/текст контент -->
-      <div class="lecture-content" *ngIf="module.content"
-           [innerHTML]="module.content">
-      </div>
+      <!-- Лекция — HTML-контент -->
+      <div class="lecture-content" *ngIf="module.content" [innerHTML]="module.content"></div>
 
-      <div class="empty-content"
-           *ngIf="!module.content && !module.file_url">
+      <div class="empty-content" *ngIf="!module.content && !module.file_url">
         Содержимое модуля ещё не добавлено.
       </div>
 
       <div class="module-footer">
+        <span class="done-badge" *ngIf="completed">✓ Модуль завершён</span>
         <button class="btn-complete" (click)="complete()">
-          ✓ Отметить как завершённый
+          {{ completed ? 'Готово, вернуться к курсу' : '✓ Отметить как завершённый' }}
         </button>
       </div>
 
