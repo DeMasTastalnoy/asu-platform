@@ -7,6 +7,7 @@ export interface Course {
   level: number;
   cover_image: string;
   modules_count: number;
+  progress?: number | null;
   created_at: string;
 }
 

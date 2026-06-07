@@ -101,41 +101,40 @@
 
 .quick-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
-/* ── Студент: Мои курсы ─────────────────────────────────── */
+/* ── Студент: Продолжить обучение ───────────────────────── */
 .loading { color: #999; font-size: 14px; }
 .hello { font-size: 18px; font-weight: 500; color: #222; margin: 0 0 16px; }
 .empty-card {
   background: #fff; border: 1px solid #e8e8e8; border-radius: 10px;
   padding: 32px; text-align: center; color: #999; font-size: 14px;
 }
+.link-btn { display: inline-block; margin-top: 12px; color: #185FA5; font-weight: 500; text-decoration: none; &:hover { text-decoration: underline; } }
+.section-label { font-size: 13px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 12px; }
 
-.my-courses {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;
+.continue-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;
 }
-.mc-card {
+.cont-card {
   background: #fff; border: 1px solid #e8e8e8; border-radius: 10px;
   padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s;
   &:hover { border-color: #cdddee; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
 }
-.mc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
-.mc-title { font-size: 15px; font-weight: 600; color: #222; line-height: 1.3; }
-.mc-deadline {
-  font-size: 11px; color: #888; background: #f3f3f3; border-radius: 6px;
-  padding: 2px 7px; white-space: nowrap; flex-shrink: 0;
-  &.overdue { color: #A32D2D; background: #FCEBEB; }
-}
-.mc-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.cont-title { font-size: 15px; font-weight: 600; color: #222; line-height: 1.3; margin-bottom: 12px; }
+.cont-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .bar { flex: 1; height: 8px; background: #eef0f2; border-radius: 4px; overflow: hidden; }
-.fill {
-  height: 100%; border-radius: 4px; transition: width .3s;
-  &.zero { background: transparent; }
-  &.mid  { background: #185FA5; }
-  &.done { background: #3B6D11; }
-}
+.fill { height: 100%; border-radius: 4px; background: #185FA5; transition: width .3s; }
 .pct { font-size: 12px; font-weight: 600; color: #555; min-width: 36px; text-align: right; }
-.mc-foot { display: flex; align-items: center; justify-content: space-between; }
-.mc-state { font-size: 12px; color: #888; &.done { color: #3B6D11; font-weight: 500; } }
-.mc-go { font-size: 12px; color: #185FA5; font-weight: 500; }
+.cont-next {
+  font-size: 13px; color: #444; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  &.muted { color: #999; font-size: 12px; }
+}
+.next-label { color: #999; font-size: 12px; }
+.next-name { font-weight: 500; color: #222; }
+.next-type {
+  font-size: 11px; color: #185FA5; background: #EBF4FF; padding: 1px 7px; border-radius: 6px;
+}
+.cont-go { font-size: 13px; color: #185FA5; font-weight: 500; text-align: right; }
 
 .action-btn {
   padding: 10px 20px; border-radius: 8px; font-size: 14px;

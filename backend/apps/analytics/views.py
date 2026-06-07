@@ -6,7 +6,7 @@ from django.db.models import Avg, Count
 from django.utils import timezone
 
 from apps.users.permissions import IsAdmin, IsInstructor
-from apps.courses.models import Enrollment, TestResult
+from apps.courses.models import Enrollment, TestResult, ModuleProgress
 from apps.simulations.models import SimulationResult
 from .models import CourseAnalytics, Certificate, DiplomaRequest
 from .serializers import (
@@ -173,6 +173,41 @@ class DiplomaRequestViewSet(viewsets.ModelViewSet):
         req.comment = (request.data.get("comment") or "").strip()
         req.save(update_fields=["status", "comment"])
         return Response(self.get_serializer(req).data)
+
+
+class StudentContinueView(APIView):
+    """GET /api/analytics/continue/ — незавершённые курсы студента и следующий модуль."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        items = []
+        enrollments = Enrollment.objects.filter(
+            student=request.user
+        ).select_related("course")
+        for e in enrollments:
+            prog = e.get_progress_percent()
+            if prog >= 100:
+                continue  # курс пройден — на дашборде не показываем
+            done = set(ModuleProgress.objects.filter(
+                enrollment=e, status=ModuleProgress.Status.COMPLETED,
+            ).values_list("module_id", flat=True))
+            nxt = None
+            for m in e.course.modules.all().order_by("order_num"):
+                if m.id in done:
+                    continue
+                if m.unlock_after_id and m.unlock_after_id not in done:
+                    continue  # заблокирован — пропускаем
+                nxt = m
+                break
+            items.append({
+                "course_id":    e.course_id,
+                "course_title": e.course.title,
+                "progress":     prog,
+                "next_module":  ({"id": nxt.id, "title": nxt.title, "type": nxt.type}
+                                 if nxt else None),
+            })
+        items.sort(key=lambda x: -x["progress"])
+        return Response(items)
 
 
 class StudentAchievementsView(APIView):

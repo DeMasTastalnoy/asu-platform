@@ -154,14 +154,23 @@ class CourseModuleCreateSerializer(serializers.ModelSerializer):
 class CourseListSerializer(serializers.ModelSerializer):
     instructor_name = serializers.CharField(source="instructor.full_name", read_only=True)
     modules_count   = serializers.IntegerField(read_only=True)
+    progress        = serializers.SerializerMethodField()
 
     class Meta:
         model  = Course
         fields = (
             "id", "title", "description", "instructor_name",
             "status", "level", "cover_image",
-            "modules_count", "created_at",
+            "modules_count", "progress", "created_at",
         )
+
+    def get_progress(self, obj):
+        """Прогресс текущего студента по курсу (None для не-студентов / без записи)."""
+        request = self.context.get("request")
+        if not request or getattr(request.user, "primary_role", None) != "student":
+            return None
+        enr = Enrollment.objects.filter(course=obj, student=request.user).first()
+        return enr.get_progress_percent() if enr else None
 
 
 class CourseDetailSerializer(serializers.ModelSerializer):

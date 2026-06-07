@@ -4,13 +4,11 @@ import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ApiService } from '../../core/services/api.service';
 
-interface MyCourse {
-  enrollment_id: number;
+interface ContinueItem {
   course_id: number;
-  title: string;
+  course_title: string;
   progress: number;
-  status: string;
-  deadline: string | null;
+  next_module: { id: number; title: string; type: string } | null;
 }
 
 @Component({
@@ -23,7 +21,7 @@ interface MyCourse {
 export class DashboardComponent implements OnInit {
   user: any;
   stats = { courses: 0 };
-  myCourses: MyCourse[] = [];
+  continueItems: ContinueItem[] = [];
   loading = true;
 
   constructor(
@@ -40,24 +38,16 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.isStudent) {
-      this.loadMyCourses();
+      this.loadContinue();
     } else {
       this.loadStats();
     }
   }
 
-  loadMyCourses(): void {
-    this.api.get<any>('enrollments/').subscribe({
+  loadContinue(): void {
+    this.api.get<any>('analytics/continue/').subscribe({
       next: data => {
-        const list = Array.isArray(data) ? data : data.results ?? [];
-        this.myCourses = list.map((e: any) => ({
-          enrollment_id: e.id,
-          course_id:     e.course,
-          title:         e.course_title,
-          progress:      e.progress ?? 0,
-          status:        e.status,
-          deadline:      e.deadline,
-        }));
+        this.continueItems = Array.isArray(data) ? data : data.results ?? [];
         this.loading = false;
       },
       error: () => { this.loading = false; },
@@ -74,19 +64,15 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  openCourse(c: MyCourse): void {
+  openCourse(c: ContinueItem): void {
     this.router.navigate(['/courses', c.course_id]);
   }
 
-  /** Дедлайн просрочен и курс ещё не завершён. */
-  isOverdue(c: MyCourse): boolean {
-    if (!c.deadline || c.progress >= 100) return false;
-    return new Date(c.deadline) < new Date();
-  }
-
-  progressClass(p: number): string {
-    if (p >= 100) return 'done';
-    if (p > 0) return 'mid';
-    return 'zero';
+  typeLabel(type: string): string {
+    const m: Record<string, string> = {
+      lecture: 'Лекция', video: 'Видео', document: 'Документ',
+      test: 'Тест', simulation: 'Симуляция',
+    };
+    return m[type] ?? type;
   }
 }

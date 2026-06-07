@@ -29,8 +29,19 @@
           <span>{{ course.modules_count }} модулей</span>
           <span>{{ course.instructor_name }}</span>
         </div>
+
+        <div class="course-progress" *ngIf="course.progress != null">
+          <div class="cp-bar"><div class="cp-fill" [class.done]="course.progress >= 100"
+                                    [style.width.%]="course.progress"></div></div>
+          <span class="cp-label" [class.done]="course.progress >= 100">
+            {{ course.progress >= 100 ? '✓ Пройден' : course.progress > 0 ? course.progress + '% пройдено' : 'Не начат' }}
+          </span>
+        </div>
+
         <div class="course-actions">
-          <a class="btn-outline" [routerLink]="['/courses', course.id]">Открыть</a>
+          <a class="btn-outline" [routerLink]="['/courses', course.id]">
+            {{ course.progress != null && course.progress > 0 && course.progress < 100 ? 'Продолжить' : 'Открыть' }}
+          </a>
         </div>
       </div>
     </div>

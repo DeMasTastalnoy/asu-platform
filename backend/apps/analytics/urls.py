@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     CourseAnalyticsViewSet, CertificateViewSet, StudentProgressView,
-    DiplomaRequestViewSet, StudentAchievementsView,
+    DiplomaRequestViewSet, StudentAchievementsView, StudentContinueView,
 )
 
 router = DefaultRouter()
@@ -13,5 +13,6 @@ router.register("analytics/diploma-requests", DiplomaRequestViewSet,  basename="
 urlpatterns = [
     path("analytics/progress/<int:pk>/", StudentProgressView.as_view(), name="student-progress"),
     path("analytics/achievements/",      StudentAchievementsView.as_view(), name="achievements"),
+    path("analytics/continue/",          StudentContinueView.as_view(),     name="continue"),
     path("", include(router.urls)),
 ]
