@@ -13,7 +13,10 @@ from django.core.files.storage import default_storage
 from django.utils.html import escape
 from django.utils import timezone
 
-from apps.users.permissions import IsAdmin, IsInstructor, IsInstructorOrReadOnly
+from rest_framework.exceptions import PermissionDenied
+from apps.users.permissions import (
+    IsAdmin, IsInstructor, IsInstructorOrReadOnly, IsCourseContentOwnerOrReadOnly,
+)
 from apps.users.models import User
 from apps.simulations.models import SimulationResult
 from .models import (
@@ -335,7 +338,15 @@ class CourseModuleViewSet(viewsets.ModelViewSet):
     DELETE /api/modules/{id}/     — удалить
     POST   /api/modules/{id}/complete/ — отметить модуль завершённым
     """
-    permission_classes = [IsInstructorOrReadOnly]
+    permission_classes = [IsCourseContentOwnerOrReadOnly]
+
+    def perform_create(self, serializer):
+        # Инструктор может добавлять модули только в свои курсы.
+        course = serializer.validated_data.get("course")
+        user   = self.request.user
+        if user.primary_role != "admin" and course and course.instructor_id != user.id:
+            raise PermissionDenied("Можно добавлять модули только в свои курсы.")
+        serializer.save()
 
     def get_queryset(self):
         qs = CourseModule.objects.select_related("course")
@@ -655,10 +666,18 @@ class TestQuestionViewSet(viewsets.ModelViewSet):
     DELETE /api/questions/{id}/        — удалить
     """
     serializer_class   = TestQuestionSerializer
-    permission_classes = [IsInstructorOrReadOnly]
+    permission_classes = [IsCourseContentOwnerOrReadOnly]
+
+    def perform_create(self, serializer):
+        # Вопросы можно добавлять только в тесты своих курсов.
+        module = serializer.validated_data.get("module")
+        user   = self.request.user
+        if user.primary_role != "admin" and module and module.course.instructor_id != user.id:
+            raise PermissionDenied("Можно добавлять вопросы только в свои тесты.")
+        serializer.save()
 
     def get_queryset(self):
-        qs        = TestQuestion.objects.all()
+        qs        = TestQuestion.objects.select_related("module__course")
         module_id = self.request.query_params.get("module_id")
         if module_id:
             qs = qs.filter(module_id=module_id)
