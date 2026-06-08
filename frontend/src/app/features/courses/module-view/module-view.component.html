@@ -35,7 +35,8 @@
         Содержимое модуля ещё не добавлено.
       </div>
 
-      <div class="module-footer">
+      <!-- Студент: завершение модуля -->
+      <div class="module-footer" *ngIf="isStudent">
         <span class="done-badge" *ngIf="completed">✓ Модуль завершён</span>
         <button class="btn-complete" (click)="complete()">
           {{ completed ? 'Готово, вернуться к курсу' : '✓ Отметить как завершённый' }}
@@ -43,6 +44,12 @@
         <span class="footer-hint" *ngIf="!completed">
           Нажмите, когда изучите материал — модуль зачтётся в прогресс курса.
         </span>
+      </div>
+
+      <!-- Преподаватель/админ: режим предпросмотра -->
+      <div class="module-footer" *ngIf="!isStudent">
+        <span class="footer-hint">Режим предпросмотра — отметка о завершении только для студентов.</span>
+        <a [routerLink]="['/courses', courseId]" class="btn-complete">← Назад к курсу</a>
       </div>
 
     </ng-container>

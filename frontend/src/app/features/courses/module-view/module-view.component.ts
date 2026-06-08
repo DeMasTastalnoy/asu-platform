@@ -52,6 +52,10 @@ export class ModuleViewComponent implements OnInit {
     return u.startsWith('http') ? u : this.MEDIA_HOST + u;
   }
 
+  get isStudent(): boolean {
+    return this.user()?.primary_role === 'student';
+  }
+
   get isPdf(): boolean {
     return /\.pdf($|\?)/i.test(this.module?.file_url ?? '');
   }

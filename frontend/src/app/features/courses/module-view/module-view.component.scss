@@ -45,6 +45,7 @@
 }
 
 .btn-complete {
+  display: inline-block; text-decoration: none;
   padding: 10px 24px; background: #3B6D11; color: #fff;
   border: none; border-radius: 8px; font-size: 14px;
   font-weight: 500; cursor: pointer;
