@@ -180,6 +180,7 @@ class Command(BaseCommand):
         course2.title = "Эксплуатация котельной установки ДКВР"
         course2.description = ("Устройство, технологический процесс и безопасный пуск "
                                "парового котла ДКВР-10/13. Завершается тренажёром-симулятором.")
+        course2.prerequisite = course1  # открывается только после базового курса
         course2.save()
         content_modules = self._build(course2, [
             ("lecture", "Устройство парового котла ДКВР-10/13", L_BOILER_DEVICE, None),

@@ -8,6 +8,9 @@ export interface Course {
   cover_image: string;
   modules_count: number;
   progress?: number | null;
+  prerequisite?: number | null;
+  prerequisite_title?: string | null;
+  locked?: boolean;
   created_at: string;
 }
 

@@ -21,6 +21,8 @@ export class CourseDetailComponent implements OnInit {
   user:   any;
   reordering   = false;
   reorderError = '';
+  allCourses: { id: number; title: string }[] = [];
+  prereqSaving = false;
 
   constructor(
     private api:    ApiService,
@@ -42,11 +44,38 @@ export class CourseDetailComponent implements OnInit {
         this.course  = data;
         this.loading = false;
         this.loadModules(id);
+        if (!this.isStudent) this.loadAllCourses(+id);
       },
       error: () => {
         this.error   = 'Курс не найден.';
         this.loading = false;
       },
+    });
+  }
+
+  /** Курсы для выбора пререквизита (исключая текущий). */
+  loadAllCourses(currentId: number): void {
+    this.api.get<any>('courses/').subscribe({
+      next: data => {
+        const list = Array.isArray(data) ? data : data.results ?? [];
+        this.allCourses = list
+          .filter((c: any) => c.id !== currentId)
+          .map((c: any) => ({ id: c.id, title: c.title }));
+      },
+    });
+  }
+
+  /** Сохранить курс-пререквизит (инструктор/админ). */
+  savePrerequisite(value: any): void {
+    const prereq = value ? Number(value) : null;
+    this.prereqSaving = true;
+    this.api.patch<any>(`courses/${this.course.id}/`, { prerequisite: prereq }).subscribe({
+      next: () => {
+        this.course.prerequisite = prereq;
+        this.course.prerequisite_title = this.allCourses.find(c => c.id === prereq)?.title ?? null;
+        this.prereqSaving = false;
+      },
+      error: () => { this.prereqSaving = false; this.error = 'Не удалось сохранить пререквизит.'; },
     });
   }
 
@@ -113,14 +142,21 @@ export class CourseDetailComponent implements OnInit {
     return this.user()?.primary_role === 'student';
   }
 
+  /** Курс закрыт студенту, пока не пройден курс-пререквизит. */
+  get courseLocked(): boolean {
+    return this.isStudent && !!this.course?.locked;
+  }
+
   /** Модуль завершён? */
   private isCompleted(module: any): boolean {
     return this.getProgressStatus(module) === 'completed';
   }
 
-  /** Модуль заблокирован для студента: задан unlock_after и предшественник не завершён. */
+  /** Модуль заблокирован для студента: закрыт весь курс ИЛИ не завершён предшественник. */
   isLocked(module: any): boolean {
-    if (!this.isStudent || !module.unlock_after) return false;
+    if (!this.isStudent) return false;
+    if (this.courseLocked) return true;
+    if (!module.unlock_after) return false;
     const prereq = this.modules.find(m => m.id === module.unlock_after);
     return !!prereq && !this.isCompleted(prereq);
   }

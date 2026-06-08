@@ -47,6 +47,15 @@
           </div>
         </div>
 
+        <div class="field">
+          <label>Доступен после курса <span class="opt">(необязательно)</span></label>
+          <select formControlName="prerequisite">
+            <option [ngValue]="null">— без условия —</option>
+            <option *ngFor="let c of courses" [ngValue]="c.id">{{ c.title }}</option>
+          </select>
+          <span class="hint">Студент сможет открыть этот курс только после прохождения выбранного.</span>
+        </div>
+
         <div class="error-msg" *ngIf="error">{{ error }}</div>
 
         <div class="form-actions">

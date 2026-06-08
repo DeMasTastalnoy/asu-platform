@@ -33,15 +33,36 @@ def attempt_allowance(module, user):
     }
 
 
-def module_locked(module, user):
-    """True, если модуль закрыт для студента: задан unlock_after и предшественник не завершён.
+def course_locked(course, user):
+    """True, если курс закрыт для студента: задан курс-пререквизит и он не пройден (100%).
 
-    Преподаватель/админ не блокируются. Незаписанный студент не блокируется
-    (доступ к курсу решают другие проверки).
+    Преподаватель/админ не блокируются. Если студент не записан на
+    курс-пререквизит — он считается непройденным (курс закрыт).
     """
-    if not module.unlock_after_id:
+    if not course.prerequisite_id:
         return False
     if getattr(user, "primary_role", None) != "student":
+        return False
+    enr = Enrollment.objects.filter(
+        course_id=course.prerequisite_id, student=user,
+    ).first()
+    if not enr:
+        return True
+    return enr.get_progress_percent() < 100
+
+
+def module_locked(module, user):
+    """True, если модуль недоступен студенту.
+
+    Закрыт, если: (1) курс-пререквизит не пройден, либо (2) задан unlock_after
+    и предшествующий модуль не завершён. Преподаватель/админ не блокируются.
+    """
+    if getattr(user, "primary_role", None) != "student":
+        return False
+    # Весь курс закрыт, пока не пройден курс-пререквизит.
+    if course_locked(module.course, user):
+        return True
+    if not module.unlock_after_id:
         return False
     enrollment = Enrollment.objects.filter(
         course_id=module.course_id, student=user,
@@ -152,15 +173,18 @@ class CourseModuleCreateSerializer(serializers.ModelSerializer):
 
 
 class CourseListSerializer(serializers.ModelSerializer):
-    instructor_name = serializers.CharField(source="instructor.full_name", read_only=True)
-    modules_count   = serializers.IntegerField(read_only=True)
-    progress        = serializers.SerializerMethodField()
+    instructor_name    = serializers.CharField(source="instructor.full_name", read_only=True)
+    modules_count      = serializers.IntegerField(read_only=True)
+    progress           = serializers.SerializerMethodField()
+    prerequisite_title = serializers.CharField(source="prerequisite.title", read_only=True)
+    locked             = serializers.SerializerMethodField()
 
     class Meta:
         model  = Course
         fields = (
             "id", "title", "description", "instructor_name",
             "status", "level", "cover_image",
+            "prerequisite", "prerequisite_title", "locked",
             "modules_count", "progress", "created_at",
         )
 
@@ -172,24 +196,39 @@ class CourseListSerializer(serializers.ModelSerializer):
         enr = Enrollment.objects.filter(course=obj, student=request.user).first()
         return enr.get_progress_percent() if enr else None
 
+    def get_locked(self, obj):
+        request = self.context.get("request")
+        if not request:
+            return False
+        return course_locked(obj, request.user)
+
 
 class CourseDetailSerializer(serializers.ModelSerializer):
-    instructor = UserSerializer(read_only=True)
-    modules    = CourseModuleSerializer(many=True, read_only=True)
+    instructor         = UserSerializer(read_only=True)
+    modules            = CourseModuleSerializer(many=True, read_only=True)
+    prerequisite_title = serializers.CharField(source="prerequisite.title", read_only=True)
+    locked             = serializers.SerializerMethodField()
 
     class Meta:
         model  = Course
         fields = (
             "id", "title", "description", "instructor",
             "status", "level", "cover_image",
+            "prerequisite", "prerequisite_title", "locked",
             "modules", "created_at", "updated_at",
         )
+
+    def get_locked(self, obj):
+        request = self.context.get("request")
+        if not request:
+            return False
+        return course_locked(obj, request.user)
 
 
 class CourseCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Course
-        fields = ("id", "title", "description", "status", "level", "cover_image")
+        fields = ("id", "title", "description", "status", "level", "cover_image", "prerequisite")
         read_only_fields = ("id",)
 
     def create(self, validated_data):

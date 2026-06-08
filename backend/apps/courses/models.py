@@ -20,6 +20,11 @@ class Course(models.Model):
     )
     level         = models.PositiveSmallIntegerField("Уровень сложности", default=1)
     cover_image   = models.CharField("Обложка (URL)", max_length=500, blank=True)
+    prerequisite  = models.ForeignKey(
+        "self", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="unlocks",
+        verbose_name="Доступен после курса",
+    )
     created_at    = models.DateTimeField(auto_now_add=True)
     updated_at    = models.DateTimeField(auto_now=True)
 

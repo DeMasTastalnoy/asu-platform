@@ -27,7 +27,23 @@
           <span>Модулей: <strong>{{ modules.length }}</strong></span>
         </div>
 
-        <div class="course-progress" *ngIf="isStudent && modules.length > 0">
+        <!-- Студент: курс закрыт пререквизитом -->
+        <div class="course-locked-banner" *ngIf="courseLocked">
+          🔒 Курс заблокирован. Сначала завершите курс «{{ course.prerequisite_title }}».
+        </div>
+
+        <!-- Инструктор/админ: выбор курса-пререквизита -->
+        <div class="prereq-edit" *ngIf="!isStudent">
+          <span class="prereq-label">Доступен после курса:</span>
+          <select [value]="course.prerequisite ?? ''" (change)="savePrerequisite($any($event.target).value)"
+                  [disabled]="prereqSaving">
+            <option value="">— без условия —</option>
+            <option *ngFor="let c of allCourses" [value]="c.id">{{ c.title }}</option>
+          </select>
+          <span class="prereq-saved" *ngIf="prereqSaving">сохранение…</span>
+        </div>
+
+        <div class="course-progress" *ngIf="isStudent && !courseLocked && modules.length > 0">
           <div class="cp-bar"><div class="cp-fill" [style.width.%]="courseProgress"></div></div>
           <span class="cp-pct">{{ courseProgress }}% пройдено</span>
         </div>

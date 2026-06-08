@@ -16,7 +16,7 @@
       </button>
     </div>
     <div class="courses-grid" *ngIf="!loading && courses.length > 0">
-      <div class="course-card" *ngFor="let course of courses">
+      <div class="course-card" *ngFor="let course of courses" [class.locked]="course.locked">
         <div class="course-header">
           <span class="level-badge">Уровень {{ course.level }}</span>
           <span class="status-badge" [class]="'status-' + course.status">
@@ -30,7 +30,11 @@
           <span>{{ course.instructor_name }}</span>
         </div>
 
-        <div class="course-progress" *ngIf="course.progress != null">
+        <div class="course-locked" *ngIf="course.locked">
+          🔒 Доступен после курса «{{ course.prerequisite_title }}»
+        </div>
+
+        <div class="course-progress" *ngIf="!course.locked && course.progress != null">
           <div class="cp-bar"><div class="cp-fill" [class.done]="course.progress >= 100"
                                     [style.width.%]="course.progress"></div></div>
           <span class="cp-label" [class.done]="course.progress >= 100">
@@ -39,9 +43,10 @@
         </div>
 
         <div class="course-actions">
-          <a class="btn-outline" [routerLink]="['/courses', course.id]">
+          <a class="btn-outline" *ngIf="!course.locked" [routerLink]="['/courses', course.id]">
             {{ course.progress != null && course.progress > 0 && course.progress < 100 ? 'Продолжить' : 'Открыть' }}
           </a>
+          <button class="btn-outline" *ngIf="course.locked" disabled>Заблокирован</button>
         </div>
       </div>
     </div>

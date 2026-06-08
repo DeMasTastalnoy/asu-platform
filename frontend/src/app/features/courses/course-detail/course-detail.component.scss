@@ -33,6 +33,20 @@
 }
 .course-desc { font-size: 14px; color: #555; margin: 0 0 14px; }
 
+.course-locked-banner {
+  margin-top: 14px; background: #FFF8EC; color: #854F0B; border: 1px solid #f0e0c0;
+  padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 500;
+}
+.prereq-edit {
+  margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  .prereq-label { font-size: 13px; color: #777; }
+  select {
+    padding: 7px 10px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; background: #fff;
+    &:focus { outline: none; border-color: #185FA5; }
+  }
+  .prereq-saved { font-size: 12px; color: #185FA5; }
+}
+
 .course-progress { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
 .cp-bar { flex: 1; height: 8px; background: #eef0f2; border-radius: 4px; overflow: hidden; }
 .cp-fill { height: 100%; background: #3B6D11; border-radius: 4px; transition: width .3s; }

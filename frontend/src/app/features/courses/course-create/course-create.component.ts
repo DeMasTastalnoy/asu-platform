@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -11,17 +11,28 @@ import { ApiService } from '../../../core/services/api.service';
   templateUrl: './course-create.component.html',
   styleUrl: './course-create.component.scss',
 })
-export class CourseCreateComponent {
+export class CourseCreateComponent implements OnInit {
   form: FormGroup;
   loading = false;
   error   = '';
+  courses: { id: number; title: string }[] = [];
 
   constructor(private fb: FormBuilder, private api: ApiService, private router: Router) {
     this.form = this.fb.group({
-      title:       ['', [Validators.required, Validators.maxLength(200)]],
-      description: [''],
-      level:       [1, [Validators.required, Validators.min(1), Validators.max(5)]],
-      status:      ['draft'],
+      title:        ['', [Validators.required, Validators.maxLength(200)]],
+      description:  [''],
+      level:        [1, [Validators.required, Validators.min(1), Validators.max(5)]],
+      status:       ['draft'],
+      prerequisite: [null],
+    });
+  }
+
+  ngOnInit(): void {
+    this.api.get<any>('courses/').subscribe({
+      next: data => {
+        const list = Array.isArray(data) ? data : data.results ?? [];
+        this.courses = list.map((c: any) => ({ id: c.id, title: c.title }));
+      },
     });
   }
 
