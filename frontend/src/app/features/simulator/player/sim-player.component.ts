@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../../core/services/api.service';
@@ -24,6 +24,9 @@ interface ActionLog {
 })
 export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('konvaContainer') konvaContainer!: ElementRef;
+  @ViewChild('playerRoot') playerRoot!: ElementRef<HTMLElement>;
+
+  isFullscreen = false;
 
   stage!: Konva.Stage;
   layer!: Konva.Layer;
@@ -228,6 +231,36 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
         y: pointer.y - origin.y * newScale,
       });
     });
+  }
+
+  /** Полноэкранный режим рабочей области плеера. */
+  toggleFullscreen(): void {
+    if (!document.fullscreenElement) {
+      this.playerRoot?.nativeElement.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }
+
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    this.isFullscreen = !!document.fullscreenElement;
+    // После смены режима пересчитываем размер холста под доступную область.
+    setTimeout(() => this.resizeStage(), 60);
+  }
+
+  /** Подгоняет размер Konva-сцены под контейнер (для fullscreen и обратно). */
+  private resizeStage(): void {
+    if (!this.stage || !this.konvaContainer) return;
+    const wrap = this.konvaContainer.nativeElement.parentElement as HTMLElement;
+    if (this.isFullscreen) {
+      this.stage.width(wrap.clientWidth);
+      this.stage.height(wrap.clientHeight);
+    } else {
+      this.stage.width(this.template.canvas_w ?? 1100);
+      this.stage.height(this.template.canvas_h ?? 580);
+    }
+    this.fitToScreen();
   }
 
   fitToScreen(): void {

@@ -1,4 +1,4 @@
-<div class="player">
+<div class="player" #playerRoot [class.fs]="isFullscreen">
   <div class="topbar">
     <a *ngIf="testMode" [routerLink]="['/simulator', simulationId, 'edit']" class="back-btn">← К редактору</a>
     <a *ngIf="!testMode && fromList" routerLink="/simulator" class="back-btn">← К списку</a>
@@ -12,6 +12,10 @@
       <span class="badge-done" *ngIf="finished">✓ Завершено</span>
       <button class="btn-fit" *ngIf="!loading && template" (click)="fitToScreen()" title="По центру">
         ⊡ По центру
+      </button>
+      <button class="btn-fit" *ngIf="!loading && template" (click)="toggleFullscreen()"
+              [title]="isFullscreen ? 'Свернуть' : 'На весь экран'">
+        {{ isFullscreen ? '⤢ Свернуть' : '⛶ На весь экран' }}
       </button>
       <a class="btn-edit"
          *ngIf="user()?.primary_role === 'instructor' || user()?.primary_role === 'admin'"

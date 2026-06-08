@@ -1,5 +1,13 @@
 .player { display: flex; flex-direction: column; height: 100%; background: #f0f4f8; }
 
+/* Полноэкранный режим: холст растягивается на всю доступную область */
+.player.fs {
+  .content { overflow: hidden; }
+  .canvas-wrap { flex: 1; align-items: center; min-height: 0; }
+  .konva-stage { width: 100% !important; height: 100% !important; }
+  .action-log { display: none; }
+}
+
 .topbar {
   height: 52px; background: #fff; border-bottom: 1px solid #e8e8e8;
   display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0;
