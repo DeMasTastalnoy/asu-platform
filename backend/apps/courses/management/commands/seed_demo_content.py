@@ -146,7 +146,6 @@ class Command(BaseCommand):
         if not dkvr:
             self.stderr.write("ДКВР-шаблон (id=3) не найден — прерываю, чтобы ничего не испортить.")
             return
-        dkvr_module_id = dkvr.module_id
 
         course1 = Course.objects.filter(pk=1).first()
         course2 = Course.objects.filter(pk=2).first()
@@ -154,14 +153,16 @@ class Command(BaseCommand):
             self.stderr.write("Курсы 1 и 2 не найдены.")
             return
 
-        # 1. Чистим мусорные sim-шаблоны (всё кроме ДКВР).
-        junk = SimulationTemplate.objects.exclude(pk=DKVR_TEMPLATE_ID)
-        n_tpl = junk.count()
-        junk.delete()
+        # 1. Чистим только «висящие» sim-шаблоны (без привязки к модулю).
+        #    Привязанные (ДКВР, пульт и т.п.) сохраняем.
+        n_tpl, _ = SimulationTemplate.objects.filter(module__isnull=True).delete()
 
-        # 2. Удаляем все модули обоих курсов, КРОМЕ модуля ДКВР.
+        # 2. Удаляем все модули обоих курсов, КРОМЕ симуляционных (с шаблоном).
+        sim_module_ids = list(CourseModule.objects.filter(
+            course__in=[course1, course2], simulation_template__isnull=False,
+        ).values_list("id", flat=True))
         CourseModule.objects.filter(course__in=[course1, course2]).exclude(
-            pk=dkvr_module_id
+            id__in=sim_module_ids
         ).delete()
 
         # 3. Курс 1 — основы АСУ ТП.
@@ -169,12 +170,13 @@ class Command(BaseCommand):
         course1.description = ("Вводный курс: назначение автоматизированных систем "
                                "управления, их структура и роль оператора.")
         course1.save()
-        self._build(course1, [
+        c1_content = self._build(course1, [
             ("lecture", "Что такое АСУ ТП", L_ASU_INTRO, None),
             ("lecture", "Структура АСУ ТП: датчики, контроллеры, SCADA", L_ASU_STRUCT, None),
             ("lecture", "Обязанности оператора и охрана труда", L_ASU_OPERATOR, None),
             ("test",    "Проверочный тест по основам АСУ ТП", None, QUIZ_ASU),
         ])
+        self._append_sims(course1, c1_content)
 
         # 4. Курс 2 — эксплуатация котла ДКВР, финал — тренажёр.
         course2.title = "Эксплуатация котельной установки ДКВР"
@@ -182,27 +184,34 @@ class Command(BaseCommand):
                                "парового котла ДКВР-10/13. Завершается тренажёром-симулятором.")
         course2.prerequisite = course1  # открывается только после базового курса
         course2.save()
-        content_modules = self._build(course2, [
+        c2_content = self._build(course2, [
             ("lecture", "Устройство парового котла ДКВР-10/13", L_BOILER_DEVICE, None),
             ("lecture", "Топливо, воздух и пар: технологический процесс", L_BOILER_PROCESS, None),
             ("lecture", "Порядок пуска котельной установки", L_BOILER_START, None),
             ("lecture", "Аварийные ситуации и защита котла", L_BOILER_ALARM, None),
             ("test",    "Тест: устройство и эксплуатация ДКВР", None, QUIZ_BOILER),
         ])
-
-        # ДКВР-модуль ставим финальным и связываем с последним тестом.
-        dkvr_module = CourseModule.objects.get(pk=dkvr_module_id)
-        dkvr_module.title = "Тренажёр: пуск котла ДКВР-10/13"
-        dkvr_module.order_num = len(content_modules)
-        dkvr_module.is_required = True
-        dkvr_module.unlock_after = content_modules[-1]  # после теста
-        dkvr_module.save()
+        self._append_sims(course2, c2_content)
 
         self.stdout.write(self.style.SUCCESS(
-            f"Готово. Удалено мусорных шаблонов: {n_tpl}. "
+            f"Готово. Удалено висящих шаблонов: {n_tpl}. "
             f"Курс 1: {course1.modules.count()} модулей; "
-            f"курс 2: {course2.modules.count()} модулей (вкл. тренажёр ДКВР)."
+            f"курс 2: {course2.modules.count()} модулей. Симуляции сохранены."
         ))
+
+    def _append_sims(self, course, content_modules):
+        """Ставит симуляционные модули курса в конец, разблокировка — после контента."""
+        order = len(content_modules)
+        prev  = content_modules[-1] if content_modules else None
+        for m in course.modules.filter(simulation_template__isnull=False).order_by("order_num"):
+            if m.simulation_template.pk == DKVR_TEMPLATE_ID:
+                m.title = "Тренажёр: пуск котла ДКВР-10/13"
+            m.order_num    = order
+            m.is_required  = True
+            m.unlock_after = prev
+            m.save()
+            order += 1
+            prev = m
 
     def _build(self, course, items):
         """Создаёт модули по списку, проставляя порядок и последовательную разблокировку."""
