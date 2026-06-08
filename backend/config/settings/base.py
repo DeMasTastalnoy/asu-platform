@@ -117,6 +117,9 @@ STATIC_URL  = "/static/"
 MEDIA_URL   = "/media/"
 MEDIA_ROOT  = BASE_DIR / "media"
 
+# Макс. размер загружаемого файла модуля (МБ).
+MODULE_UPLOAD_MAX_MB = config("UPLOAD_MAX_MB", default=500, cast=int)
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LANGUAGE_CODE = "ru-ru"
 TIME_ZONE     = "Europe/Moscow"

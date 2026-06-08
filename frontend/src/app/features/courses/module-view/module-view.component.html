@@ -20,6 +20,9 @@
         <div class="doc-preview" *ngIf="isPdf">
           <iframe [src]="safeDocUrl" title="Документ"></iframe>
         </div>
+        <div class="doc-note" *ngIf="!isPdf">
+          Предпросмотр доступен только для PDF. Скачайте файл, чтобы открыть его.
+        </div>
         <div class="doc-link">
           <a [href]="fileUrl()" target="_blank" class="btn-primary">📄 Открыть / скачать документ</a>
         </div>
@@ -37,6 +40,9 @@
         <button class="btn-complete" (click)="complete()">
           {{ completed ? 'Готово, вернуться к курсу' : '✓ Отметить как завершённый' }}
         </button>
+        <span class="footer-hint" *ngIf="!completed">
+          Нажмите, когда изучите материал — модуль зачтётся в прогресс курса.
+        </span>
       </div>
 
     </ng-container>

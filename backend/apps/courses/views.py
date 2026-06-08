@@ -589,7 +589,6 @@ class ModuleUploadView(APIView):
         ".mp4", ".webm", ".ogg", ".mov", ".m4v",
         ".png", ".jpg", ".jpeg", ".gif",
     }
-    MAX_SIZE = 200 * 1024 * 1024  # 200 МБ
 
     def post(self, request):
         f = request.FILES.get("file")
@@ -599,8 +598,9 @@ class ModuleUploadView(APIView):
         if ext not in self.ALLOWED:
             return Response({"detail": f"Недопустимый тип файла: {ext or '—'}"},
                             status=status.HTTP_400_BAD_REQUEST)
-        if f.size > self.MAX_SIZE:
-            return Response({"detail": "Файл слишком большой (макс. 200 МБ)."},
+        max_mb = settings.MODULE_UPLOAD_MAX_MB
+        if f.size > max_mb * 1024 * 1024:
+            return Response({"detail": f"Файл слишком большой (макс. {max_mb} МБ)."},
                             status=status.HTTP_400_BAD_REQUEST)
         stored = default_storage.save(f"module_files/{uuid.uuid4().hex}{ext}", f)
         return Response({
