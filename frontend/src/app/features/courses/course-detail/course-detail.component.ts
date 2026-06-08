@@ -139,6 +139,21 @@ export class CourseDetailComponent implements OnInit {
     return Math.round(done / required.length * 100);
   }
 
+  /** Удаление модуля с подтверждением (инструктор/админ). */
+  deleteModule(module: any, ev: Event): void {
+    ev.stopPropagation();
+    const ok = confirm(
+      `Удалить модуль «${module.title}»?\n\n` +
+      `Это действие необратимо: будут удалены его содержимое` +
+      (module.type === 'test' ? ', вопросы и результаты тестов' : '') + '.'
+    );
+    if (!ok) return;
+    this.api.delete(`modules/${module.id}/`).subscribe({
+      next: () => { this.modules = this.modules.filter(m => m.id !== module.id); },
+      error: () => { this.error = 'Не удалось удалить модуль.'; },
+    });
+  }
+
   openModule(module: any): void {
     if (this.isLocked(module)) return;
     switch (module.type) {

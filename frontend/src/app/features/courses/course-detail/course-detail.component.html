@@ -86,6 +86,11 @@
           [routerLink]="['/courses', course.id, 'modules', module.id, 'edit']">
     Изменить
   </button>
+  <button class="btn-sm btn-sm-danger"
+          *ngIf="user()?.primary_role !== 'student'"
+          (click)="deleteModule(module, $event)" title="Удалить модуль">
+    ✕
+  </button>
 </div>
           </div>
         </div>

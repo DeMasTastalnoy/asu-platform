@@ -24,7 +24,10 @@ export class CoursesListComponent implements OnInit {
   ngOnInit(): void {
     this.api.get<any>('courses/').subscribe({
       next: data => {
-        this.courses = Array.isArray(data) ? data : data.results ?? [];
+        const list = Array.isArray(data) ? data : data.results ?? [];
+        // По возрастанию уровня сложности (основы — первыми), затем по названию.
+        this.courses = list.sort((a: Course, b: Course) =>
+          (a.level ?? 0) - (b.level ?? 0) || a.title.localeCompare(b.title));
         this.loading = false;
       },
       error: () => { this.loading = false; }
