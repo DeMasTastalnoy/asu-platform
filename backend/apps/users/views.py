@@ -65,6 +65,10 @@ class UserViewSet(viewsets.ModelViewSet):
     GET    /api/users/me/       — текущий пользователь
     """
     queryset = User.objects.prefetch_related("roles").order_by("-created_at")
+    # Управление пользователями — только для админа, пользователей немного.
+    # Без пагинации, иначе на странице управления терялись «лишние» аккаунты
+    # (напр. преподаватели за пределами первой страницы из 20).
+    pagination_class = None
 
     def get_serializer_class(self):
         if self.action == "create":

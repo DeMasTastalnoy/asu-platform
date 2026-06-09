@@ -53,7 +53,11 @@ export class RegisterComponent {
     },
     error: err => {
       this.loading = false;
-      this.error   = err.error?.username?.[0] ?? err.error?.email?.[0] ?? err.error?.detail ?? 'Ошибка регистрации.';
+      const e = err.error ?? {};
+      this.error =
+        e.username?.[0] ?? e.email?.[0] ?? e.password?.[0] ??
+        e.password2?.[0] ?? e.full_name?.[0] ?? e.non_field_errors?.[0] ??
+        e.detail ?? 'Ошибка регистрации.';
     },
   });
 }
