@@ -11,6 +11,18 @@
 .content { flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
 .loading { color: #999; font-size: 14px; }
 
+.pending-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: #FFF6E5; border: 1px solid #F3D89B; border-radius: 10px;
+  padding: 12px 16px; font-size: 14px; color: #7A5300;
+  strong { font-weight: 700; }
+}
+.pending-link {
+  padding: 6px 14px; background: #185FA5; color: #fff; border: none;
+  border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer;
+  &:hover { background: #0C447C; }
+}
+
 .filters {
   display: flex; gap: 10px;
 }

@@ -5,7 +5,18 @@
       <p>Регистрация нового пользователя</p>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="submit()">
+    <!-- Экран успеха: аккаунт ждёт подтверждения администратором -->
+    <div class="reg-success" *ngIf="success">
+      <div class="reg-success-icon">✓</div>
+      <p class="reg-success-title">Регистрация принята</p>
+      <p class="reg-success-text">
+        Аккаунт создан и ожидает подтверждения администратором.
+        Вход станет доступен после активации.
+      </p>
+      <a routerLink="/auth/login" class="reg-success-btn">Перейти ко входу</a>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" *ngIf="!success">
       <div class="field">
         <label>Логин</label>
         <input type="text" formControlName="username" placeholder="Введите логин"/>

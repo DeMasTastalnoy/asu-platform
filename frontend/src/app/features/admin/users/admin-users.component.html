@@ -9,6 +9,15 @@
 
     <ng-container *ngIf="!loading">
 
+      <!-- Ожидают подтверждения регистрации -->
+      <div class="pending-banner" *ngIf="pendingCount > 0">
+        <span>🔔 Новых регистраций, ожидающих подтверждения: <strong>{{ pendingCount }}</strong></span>
+        <button class="pending-link"
+                (click)="selectedStatus = 'pending'; applyFilter()">
+          Показать
+        </button>
+      </div>
+
       <!-- Фильтры -->
       <div class="filters">
         <input
@@ -19,6 +28,9 @@
           (ngModelChange)="applyFilter()"/>
         <select class="role-select" [(ngModel)]="selectedRole" (ngModelChange)="applyFilter()">
           <option *ngFor="let r of roles" [value]="r.value">{{ r.label }}</option>
+        </select>
+        <select class="role-select" [(ngModel)]="selectedStatus" (ngModelChange)="applyFilter()">
+          <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
         </select>
       </div>
 
@@ -67,7 +79,7 @@
                 <span class="status-badge"
                       [class.active]="user.is_active"
                       [class.blocked]="!user.is_active">
-                  {{ user.is_active ? 'Активен' : 'Заблокирован' }}
+                  {{ user.is_active ? 'Активен' : 'Не активен' }}
                 </span>
               </td>
               <td class="date-cell">
@@ -79,7 +91,7 @@
                         [class.unblock]="!user.is_active"
                         (click)="toggleActive(user)"
                         [disabled]="actionLoading[user.id]">
-                  {{ actionLoading[user.id] ? '...' : (user.is_active ? 'Заблокировать' : 'Разблокировать') }}
+                  {{ actionLoading[user.id] ? '...' : (user.is_active ? 'Заблокировать' : 'Активировать') }}
                 </button>
               </td>
             </tr>

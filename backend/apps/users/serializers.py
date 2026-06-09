@@ -47,6 +47,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
         )
         if not is_admin:
             validated_data["primary_role"] = User.Role.STUDENT
+            # Самостоятельная регистрация — аккаунт неактивен до подтверждения
+            # администратором (модерация регистраций). Аккаунты, заведённые
+            # админом через UserViewSet, активны сразу.
+            validated_data["is_active"] = False
         user = User.objects.create_user(**validated_data)
         UserRole.objects.create(user=user, role=user.primary_role)
         return user
@@ -83,6 +87,17 @@ class ChangePasswordSerializer(serializers.Serializer):
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs):
+        # Понятное сообщение, если аккаунт ещё не подтверждён администратором
+        # (самостоятельная регистрация создаёт неактивный аккаунт).
+        user = User.objects.filter(username=attrs.get(self.username_field)).first()
+        if user is not None and not user.is_active:
+            raise serializers.ValidationError(
+                "Аккаунт ожидает подтверждения администратором.",
+                code="account_pending",
+            )
+        return super().validate(attrs)
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)

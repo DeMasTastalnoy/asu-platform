@@ -103,3 +103,21 @@ button {
   margin-top: 4px;
   display: block;
 }
+
+.reg-success {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+.reg-success-icon {
+  width: 52px; height: 52px; margin: 0 auto 16px;
+  border-radius: 50%; background: #EAF3DE; color: #3B6D11;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700;
+}
+.reg-success-title { font-size: 17px; font-weight: 600; color: #222; margin: 0 0 8px; }
+.reg-success-text  { font-size: 13px; color: #666; line-height: 1.5; margin: 0 0 20px; }
+.reg-success-btn {
+  display: inline-block; padding: 11px 24px; background: #185FA5; color: #fff;
+  border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 500;
+  &:hover { background: #0C447C; }
+}

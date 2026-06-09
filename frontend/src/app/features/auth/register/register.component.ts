@@ -15,6 +15,7 @@ export class RegisterComponent {
   form: FormGroup;
   loading = false;
   error   = '';
+  success = false;
 
   constructor(
     private fb:     FormBuilder,
@@ -46,7 +47,10 @@ export class RegisterComponent {
   const { password2, ...payload } = this.form.value;
 
   this.auth.register(payload).subscribe({
-    next: () => this.router.navigate(['/auth/login']),
+    next: () => {
+      this.loading = false;
+      this.success = true;   // аккаунт создан, но ждёт подтверждения админом
+    },
     error: err => {
       this.loading = false;
       this.error   = err.error?.username?.[0] ?? err.error?.email?.[0] ?? err.error?.detail ?? 'Ошибка регистрации.';

@@ -11,6 +11,12 @@ interface ContinueItem {
   next_module: { id: number; title: string; type: string } | null;
 }
 
+interface NewsItem {
+  date: string;
+  title: string;
+  body: string;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -23,6 +29,17 @@ export class DashboardComponent implements OnInit {
   stats = { courses: 0 };
   continueItems: ContinueItem[] = [];
   loading = true;
+
+  /** Новости платформы (статичная лента, новые — сверху). */
+  news: NewsItem[] = [
+    {
+      date: '9 июня 2026',
+      title: 'Запуск платформы дистанционного обучения операторов АСУ',
+      body: 'Платформа введена в эксплуатацию: доступны курсы, тренажёры-симуляторы ' +
+            'технологических процессов, тестирование и выдача документов об обучении. ' +
+            'Желаем успешного освоения материала!',
+    },
+  ];
 
   constructor(
     private auth: AuthService,

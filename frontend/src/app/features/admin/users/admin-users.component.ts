@@ -17,7 +17,14 @@ export class AdminUsersComponent implements OnInit {
   loading = true;
   search = '';
   selectedRole = '';
+  selectedStatus = '';
   actionLoading: Record<number, boolean> = {};
+
+  statuses = [
+    { value: '',        label: 'Любой статус' },
+    { value: 'active',  label: 'Активные' },
+    { value: 'pending', label: 'Ожидают подтверждения' },
+  ];
 
   roles = [
     { value: '',           label: 'Все роли' },
@@ -43,6 +50,10 @@ export class AdminUsersComponent implements OnInit {
     });
   }
 
+  get pendingCount(): number {
+    return this.users.filter(u => !u.is_active).length;
+  }
+
   applyFilter(): void {
     this.filtered = this.users.filter(u => {
       const matchSearch = !this.search ||
@@ -50,7 +61,10 @@ export class AdminUsersComponent implements OnInit {
         u.username?.toLowerCase().includes(this.search.toLowerCase()) ||
         u.email?.toLowerCase().includes(this.search.toLowerCase());
       const matchRole = !this.selectedRole || u.primary_role === this.selectedRole;
-      return matchSearch && matchRole;
+      const matchStatus = !this.selectedStatus ||
+        (this.selectedStatus === 'active'  && u.is_active) ||
+        (this.selectedStatus === 'pending' && !u.is_active);
+      return matchSearch && matchRole && matchStatus;
     });
   }
 
