@@ -48,6 +48,23 @@ ELEMENTS = [
     _el("btn-stop", "button", "СТОП",         "boiler-btn-burner-stop", 870, 365, 130, 90, "#B23B3B"),
 ]
 
+# Правила «если → то»: реакция индикаторов на действия оператора.
+RULES = [
+    # Включили питание → загорается «ГОТОВНОСТЬ».
+    {"if": {"variable": "sw-power", "op": "eq", "value": True},
+     "then": [{"variable": "lamp-ready", "set": True}]},
+    # Выключили питание → гаснут «ГОТОВНОСТЬ» и «РАБОТА».
+    {"if": {"variable": "sw-power", "op": "eq", "value": False},
+     "then": [{"variable": "lamp-ready", "set": False},
+              {"variable": "lamp-run", "set": False}]},
+    # Нажали «ПУСК» → загорается «РАБОТА».
+    {"if": {"variable": "btn-start", "op": "eq", "value": True},
+     "then": [{"variable": "lamp-run", "set": True}]},
+    # Нажали «СТОП» → гаснет «РАБОТА».
+    {"if": {"variable": "btn-stop", "op": "eq", "value": True},
+     "then": [{"variable": "lamp-run", "set": False}]},
+]
+
 # Эталонный сценарий — корректная последовательность запуска с пульта.
 SCENARIO = [
     {"step": 1, "element_id": "sw-power", "expected_value": True,
@@ -77,7 +94,7 @@ class Command(BaseCommand):
             status=SimulationTemplate.Status.PUBLISHED,
             canvas_w=1180, canvas_h=560,
             description="АРМ оператора: запуск установки с пульта в правильной последовательности.",
-            elements=ELEMENTS, connections=[], rules=[], reference_scenario=SCENARIO,
+            elements=ELEMENTS, connections=[], rules=RULES, reference_scenario=SCENARIO,
         )
         tpl, created = SimulationTemplate.objects.get_or_create(
             name=TEMPLATE_NAME, defaults=data,
