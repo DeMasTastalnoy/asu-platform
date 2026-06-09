@@ -51,8 +51,8 @@ interface Summary {
   styleUrl: './achievements.component.scss',
 })
 export class AchievementsComponent implements OnInit {
-  /** Хост для media-файлов (без /api). */
-  private readonly MEDIA_HOST = 'http://127.0.0.1:8000';
+  /** Префикс media-файлов. Пусто = относительный путь (nginx/прокси отдаёт /media). */
+  private readonly MEDIA_HOST = '';
 
   summary: Summary | null = null;
   courses: CourseAch[] = [];

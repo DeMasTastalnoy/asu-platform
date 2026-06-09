@@ -1,0 +1,25 @@
+# systemd-юнит для gunicorn (Django-бэкенд АСУ-Платформы).
+# Положить в /etc/systemd/system/asu-platform.service, затем:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now asu-platform
+# Замените пути и User на свои.
+
+[Unit]
+Description=ASU Platform (Django/gunicorn)
+After=network.target mysql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/asu-platform/backend
+# Виртуальное окружение проекта
+ExecStart=/var/www/asu-platform/.venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --timeout 300 \
+    config.wsgi:application
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

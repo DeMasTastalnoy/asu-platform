@@ -13,8 +13,8 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './module-view.component.scss',
 })
 export class ModuleViewComponent implements OnInit {
-  /** Хост media-файлов (без /api). */
-  private readonly MEDIA_HOST = 'http://127.0.0.1:8000';
+  /** Префикс media-файлов. Пусто = относительный путь (nginx/прокси отдаёт /media). */
+  private readonly MEDIA_HOST = '';
 
   module: any = null;
   courseId = '';

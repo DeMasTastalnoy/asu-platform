@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private baseUrl = 'http://127.0.0.1:8000/api';
+  // Относительный путь: в проде nginx проксирует /api на Django,
+  // в dev — proxy.conf.json перенаправляет /api на 127.0.0.1:8000.
+  private baseUrl = '/api';
 
   constructor(private http: HttpClient) {}
 

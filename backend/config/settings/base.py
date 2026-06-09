@@ -113,12 +113,27 @@ CORS_ALLOWED_ORIGINS = config(
     "CORS_ORIGINS", default="http://localhost:4200", cast=Csv(),
 )
 
-STATIC_URL  = "/static/"
-MEDIA_URL   = "/media/"
-MEDIA_ROOT  = BASE_DIR / "media"
+STATIC_URL   = "/static/"
+STATIC_ROOT  = BASE_DIR / "staticfiles"   # collectstatic → раздаётся nginx в проде
+MEDIA_URL    = "/media/"
+MEDIA_ROOT   = BASE_DIR / "media"
+
+# Разрешаем встраивание (PDF-сертификатов/документов) в iframe того же origin.
+X_FRAME_OPTIONS = "SAMEORIGIN"
 
 # Макс. размер загружаемого файла модуля (МБ).
 MODULE_UPLOAD_MAX_MB = config("UPLOAD_MAX_MB", default=500, cast=int)
+
+# ── Безопасность за HTTPS (включается в проде через SECURE=True в .env) ──
+SECURE = config("SECURE", default=False, cast=bool)
+if SECURE:
+    SECURE_PROXY_SSL_HEADER  = ("HTTP_X_FORWARDED_PROTO", "https")  # за nginx-TLS
+    SECURE_SSL_REDIRECT      = True
+    SESSION_COOKIE_SECURE    = True
+    CSRF_COOKIE_SECURE       = True
+    SECURE_HSTS_SECONDS      = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LANGUAGE_CODE = "ru-ru"
