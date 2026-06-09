@@ -6,12 +6,14 @@ import { forkJoin, of } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 
 interface EditOption { text: string; correct: boolean; }
+interface EditPair { left: string; right: string; }   // для type === 'match'
 interface EditQuestion {
   id?: number;
   question: string;
-  type: 'single' | 'multiple' | 'text';
+  type: 'single' | 'multiple' | 'text' | 'match';
   options: EditOption[];
   answerText: string;   // для type === 'text'
+  pairs: EditPair[];    // для type === 'match'
   points: number;
 }
 
@@ -45,6 +47,7 @@ export class TestEditComponent implements OnInit {
     { value: 'single',   label: 'Одиночный выбор' },
     { value: 'multiple', label: 'Множественный выбор' },
     { value: 'text',     label: 'Ввод текста' },
+    { value: 'match',    label: 'Сопоставление' },
   ];
 
   constructor(
@@ -84,18 +87,35 @@ export class TestEditComponent implements OnInit {
 
   /** Преобразует вопрос из API в редактируемую модель. */
   private fromApi(q: any): EditQuestion {
-    const type = ['single', 'multiple', 'text'].includes(q.type) ? q.type : 'single';
-    const ca = q.correct_answer;
-    const options: EditOption[] = (q.options ?? []).map((o: any) => ({
-      text: o.text ?? '',
-      correct: type === 'multiple' ? Array.isArray(ca) && ca.includes(o.id) : ca === o.id,
-    }));
+    const type = ['single', 'multiple', 'text', 'match'].includes(q.type) ? q.type : 'single';
+    const ca   = q.correct_answer;
+    const opts = q.options ?? [];
+
+    const isChoice = type === 'single' || type === 'multiple';
+    const options: EditOption[] = isChoice
+      ? opts.map((o: any) => ({
+          text:    o.text ?? '',
+          correct: type === 'multiple' ? Array.isArray(ca) && ca.includes(o.id) : ca === o.id,
+        }))
+      : [];
+
+    let pairs: EditPair[] = [];
+    if (type === 'match') {
+      const lefts  = opts.filter((o: any) => o.side === 'left');
+      const rights = opts.filter((o: any) => o.side === 'right');
+      const rText: Record<string, string> = {};
+      rights.forEach((r: any) => { rText[r.id] = r.text ?? ''; });
+      const mapping = (ca && typeof ca === 'object' && !Array.isArray(ca)) ? ca : {};
+      pairs = lefts.map((l: any) => ({ left: l.text ?? '', right: rText[mapping[l.id]] ?? '' }));
+    }
+
     return {
       id:         q.id,
       question:   q.question ?? '',
       type,
-      options:    type === 'text' ? [] : (options.length ? options : this.blankOptions()),
+      options:    isChoice ? (options.length ? options : this.blankOptions()) : [],
       answerText: type === 'text' ? (typeof ca === 'string' ? ca : '') : '',
+      pairs:      type === 'match' ? (pairs.length ? pairs : this.blankPairs()) : [],
       points:     q.points ?? 1,
     };
   }
@@ -104,9 +124,13 @@ export class TestEditComponent implements OnInit {
     return [{ text: '', correct: true }, { text: '', correct: false }];
   }
 
+  private blankPairs(): EditPair[] {
+    return [{ left: '', right: '' }, { left: '', right: '' }];
+  }
+
   addQuestion(): void {
     this.questions.push({
-      question: '', type: 'single', options: this.blankOptions(), answerText: '', points: 1,
+      question: '', type: 'single', options: this.blankOptions(), answerText: '', pairs: [], points: 1,
     });
   }
 
@@ -123,6 +147,10 @@ export class TestEditComponent implements OnInit {
   }
 
   onTypeChange(q: EditQuestion): void {
+    if (q.type === 'match') {
+      if (!q.pairs.length) q.pairs = this.blankPairs();
+      return;
+    }
     if (q.type === 'text') return;
     if (!q.options.length) q.options = this.blankOptions();
     if (q.type === 'single') {
@@ -151,10 +179,22 @@ export class TestEditComponent implements OnInit {
     q.options.forEach((o, idx) => o.correct = idx === i);
   }
 
+  addPair(q: EditQuestion): void {
+    q.pairs.push({ left: '', right: '' });
+  }
+
+  removePair(q: EditQuestion, i: number): void {
+    q.pairs.splice(i, 1);
+  }
+
   // ── Валидность ────────────────────────────────────────────────────────────────
   questionValid(q: EditQuestion): boolean {
     if (!q.question.trim()) return false;
     if (q.type === 'text') return !!q.answerText.trim();
+    if (q.type === 'match') {
+      const filled = q.pairs.filter(p => p.left.trim() && p.right.trim());
+      return filled.length >= 2;
+    }
     const filled = q.options.filter(o => o.text.trim());
     return filled.length >= 2 && filled.some(o => o.correct);
   }
@@ -178,6 +218,19 @@ export class TestEditComponent implements OnInit {
     if (q.type === 'text') {
       base.options = [];
       base.correct_answer = q.answerText.trim();
+    } else if (q.type === 'match') {
+      // options хранит обе колонки с пометкой стороны, correct_answer — соответствие leftId→rightId
+      const filled = q.pairs.filter(p => p.left.trim() && p.right.trim());
+      const options: any[] = [];
+      const mapping: Record<string, string> = {};
+      filled.forEach((p, i) => {
+        const lid = `l${i}`, rid = `r${i}`;
+        options.push({ id: lid, text: p.left.trim(),  side: 'left'  });
+        options.push({ id: rid, text: p.right.trim(), side: 'right' });
+        mapping[lid] = rid;
+      });
+      base.options = options;
+      base.correct_answer = mapping;
     } else {
       const filled = q.options.filter(o => o.text.trim());
       base.options = filled.map((o, i) => ({ id: this.letter(i), text: o.text.trim() }));

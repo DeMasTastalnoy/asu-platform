@@ -74,13 +74,14 @@
       <div class="question-card" *ngIf="currentQuestion">
         <div class="question-type">
           {{ currentQuestion.type === 'single' ? 'Одиночный выбор' :
-             currentQuestion.type === 'multiple' ? 'Множественный выбор' : 'Вопрос' }}
+             currentQuestion.type === 'multiple' ? 'Множественный выбор' :
+             currentQuestion.type === 'match' ? 'Сопоставление' : 'Вопрос' }}
           · {{ currentQuestion.points }} {{ currentQuestion.points === 1 ? 'балл' : 'балла' }}
         </div>
         <div class="question-text">{{ currentQuestion.question }}</div>
 
-        <!-- Варианты ответа -->
-        <div class="options">
+        <!-- Варианты ответа (single / multiple) -->
+        <div class="options" *ngIf="currentQuestion.type !== 'match'">
           <div class="option"
                *ngFor="let opt of currentQuestion.options"
                [class.selected]="isSelected(opt.id)"
@@ -89,6 +90,19 @@
               <div class="marker-inner" *ngIf="isSelected(opt.id)"></div>
             </div>
             <span>{{ opt.text }}</span>
+          </div>
+        </div>
+
+        <!-- Сопоставление (match) -->
+        <div class="match-list" *ngIf="currentQuestion.type === 'match'">
+          <div class="match-row" *ngFor="let l of leftItems(currentQuestion)">
+            <span class="match-left">{{ l.text }}</span>
+            <select class="match-select"
+                    [value]="getMatch(currentQuestion.id, l.id)"
+                    (change)="setMatch(currentQuestion.id, l.id, $any($event.target).value)">
+              <option value="">— выберите —</option>
+              <option *ngFor="let r of rightOptions(currentQuestion)" [value]="r.id">{{ r.text }}</option>
+            </select>
           </div>
         </div>
 

@@ -103,3 +103,7 @@
   &:hover:not(:disabled) { background: #0C447C; }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
+
+/* Пары сопоставления */
+.match-pair { align-items: center; }
+.match-arrow { color: #999; font-size: 16px; flex-shrink: 0; padding: 0 2px; }

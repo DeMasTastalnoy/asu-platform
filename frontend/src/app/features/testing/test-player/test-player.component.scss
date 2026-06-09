@@ -147,3 +147,16 @@
 .review-num    { color: #999; font-size: 11px; flex-shrink: 0; padding-top: 2px; }
 .review-status { font-weight: 700; flex-shrink: 0; }
 .review-text   { color: #444; flex: 1; }
+
+/* Сопоставление */
+.match-list { display: flex; flex-direction: column; gap: 10px; }
+.match-row {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border: 1px solid #e8e8e8; border-radius: 10px; padding: 12px 14px;
+}
+.match-left { flex: 1; color: #222; font-size: 14px; }
+.match-select {
+  flex: 1; padding: 8px 10px; border: 1px solid #ccd4dd; border-radius: 8px;
+  font-size: 14px; background: #fff; cursor: pointer;
+  &:focus { outline: none; border-color: #185FA5; }
+}

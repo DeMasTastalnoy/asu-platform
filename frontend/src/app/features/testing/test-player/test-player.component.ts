@@ -7,7 +7,7 @@ interface Question {
   id: number;
   question: string;
   type: string;
-  options: { id: string; text: string }[];
+  options: { id: string; text: string; side?: string }[];
   points: number;
 }
 
@@ -22,7 +22,9 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
   moduleId = '';
   questions: Question[] = [];
   currentIndex = 0;
-  answers: Record<number, string | string[]> = {};
+  answers: Record<number, string | string[] | Record<string, string>> = {};
+  /** Перемешанный пул правых вариантов для каждого вопроса-сопоставления. */
+  rightPools: Record<number, { id: string; text: string }[]> = {};
   loading = true;
   finished = false;
   submitting = false;
@@ -80,6 +82,13 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
       next: data => {
         const list = Array.isArray(data) ? data : data.results ?? [];
         this.questions = this.settings?.shuffle_questions ? this.shuffle(list) : list;
+        // Готовим перемешанный правый столбец для вопросов-сопоставлений.
+        this.questions.forEach(q => {
+          if (q.type === 'match') {
+            const rights = (q.options ?? []).filter(o => o.side === 'right');
+            this.rightPools[q.id] = this.shuffle(rights.map(o => ({ id: o.id, text: o.text })));
+          }
+        });
         this.loading = false;
         this.startTimer();
       },
@@ -138,6 +147,29 @@ export class TestPlayerComponent implements OnInit, OnDestroy {
     } else {
       this.answers[qid] = optionId;
     }
+  }
+
+  // ── Сопоставление (match) ───────────────────────────────────────────────────
+  leftItems(q: Question): { id: string; text: string }[] {
+    return (q.options ?? []).filter(o => o.side === 'left');
+  }
+
+  rightOptions(q: Question): { id: string; text: string }[] {
+    return this.rightPools[q.id] ?? [];
+  }
+
+  getMatch(qid: number, leftId: string): string {
+    const a = this.answers[qid];
+    return (a && typeof a === 'object' && !Array.isArray(a)) ? (a as Record<string, string>)[leftId] ?? '' : '';
+  }
+
+  setMatch(qid: number, leftId: string, rightId: string): void {
+    if (this.finished) return;
+    const cur = this.answers[qid];
+    const map: Record<string, string> =
+      (cur && typeof cur === 'object' && !Array.isArray(cur)) ? { ...(cur as Record<string, string>) } : {};
+    map[leftId] = rightId;
+    this.answers[qid] = map;
   }
 
   next(): void {

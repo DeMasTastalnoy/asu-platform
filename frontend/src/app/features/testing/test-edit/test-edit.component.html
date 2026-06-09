@@ -64,7 +64,7 @@
                   placeholder="Текст вопроса"></textarea>
 
         <!-- Варианты для single / multiple -->
-        <ng-container *ngIf="q.type !== 'text'">
+        <ng-container *ngIf="q.type === 'single' || q.type === 'multiple'">
           <div class="opt" *ngFor="let o of q.options; let oi = index">
             <input *ngIf="q.type === 'single'" type="radio" [name]="'correct-' + i"
                    [checked]="o.correct" (change)="setCorrectSingle(q, oi)"/>
@@ -83,6 +83,21 @@
           <input class="opt-text answer" type="text" [(ngModel)]="q.answerText"
                  placeholder="Правильный ответ (точное совпадение)"/>
           <div class="q-hint">Ответ студента сравнивается с этим текстом точно (регистр учитывается).</div>
+        </ng-container>
+
+        <!-- Пары для match -->
+        <ng-container *ngIf="q.type === 'match'">
+          <div class="opt match-pair" *ngFor="let pr of q.pairs; let pi = index">
+            <input class="opt-text" type="text" [(ngModel)]="pr.left"
+                   [placeholder]="'Слева ' + (pi + 1)"/>
+            <span class="match-arrow">↔</span>
+            <input class="opt-text" type="text" [(ngModel)]="pr.right"
+                   [placeholder]="'Справа ' + (pi + 1)"/>
+            <button class="ic ic-del" (click)="removePair(q, pi)"
+                    [disabled]="q.pairs.length <= 2" title="Убрать пару">✕</button>
+          </div>
+          <button class="add-opt" (click)="addPair(q)">+ пара</button>
+          <div class="q-hint">Задайте пары соответствия. Студенту правый столбец показывается в перемешанном порядке.</div>
         </ng-container>
       </div>
 
