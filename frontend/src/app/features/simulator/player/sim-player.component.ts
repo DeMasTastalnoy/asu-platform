@@ -456,6 +456,19 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       case 'label':
         return new Konva.Text({ x, y, text: p.text ?? el.label, fontSize: p.fontSize ?? 14, fill: p.color ?? '#1a1a1a' });
+      case 'panel': {
+        // Декоративная подложка-щит: цветной прямоугольник позади органов управления.
+        const g = new Konva.Group({ x, y });
+        g.add(new Konva.Rect({
+          width: w, height: h, fill: p.color ?? '#26323F',
+          stroke: p.border ?? '#3D4D5E', strokeWidth: 2, cornerRadius: 12,
+        }));
+        if (el.label) {
+          g.add(new Konva.Text({ x: 14, y: 10, text: el.label, fontSize: 12,
+            fill: p.titleColor ?? '#9FB3C8', fontStyle: 'bold' }));
+        }
+        return g;
+      }
       default: {
         const g = new Konva.Group({ x, y });
         g.add(new Konva.Rect({ width: w, height: h, fill: '#1A2A3A', stroke: '#607D8B', strokeWidth: 1, cornerRadius: 4 }));

@@ -25,21 +25,27 @@ def _el(var, etype, label, libid, x, y, w, h, color):
     }
 
 
-# Элементы пульта: верхний ряд — индикаторы, нижний — органы управления.
+# Элементы пульта. Сначала — две панели-подложки (рисуются позади),
+# затем индикаторы (верхняя панель) и органы управления (нижняя панель).
 ELEMENTS = [
-    # Индикаторы (пассивные)
-    _el("lamp-ready", "lamp", "ГОТОВНОСТЬ", "boiler-lamp-run",   120, 90, 80, 80, "#2E6B2E"),
-    _el("lamp-run",   "lamp", "РАБОТА",     "boiler-lamp-run",   250, 90, 80, 80, "#1F5FA8"),
-    _el("lamp-alarm", "lamp", "АВАРИЯ",     "boiler-lamp-alarm", 380, 90, 80, 80, "#A23B3B"),
-    _el("gauge-press","gauge","ДАВЛЕНИЕ",   "boiler-gauge-steam",560, 70, 120,120, "#1A2A3A"),
-    _el("gauge-temp", "gauge","ТЕМПЕРАТУРА","boiler-therm-boiler",720,70, 120,120, "#1A2A3A"),
-    _el("disp-state", "display","СОСТОЯНИЕ","boiler-disp-power", 900, 95, 200,100, "#10212E"),
-    # Органы управления (интерактивные, входят в сценарий)
-    _el("sw-power", "switch", "ПИТАНИЕ",      "boiler-sw-mode",        120, 380, 130, 90, "#45556A"),
-    _el("sw-vent",  "switch", "ВЕНТИЛЯЦИЯ",   "boiler-sw-mode",        290, 380, 130, 90, "#45556A"),
-    _el("sw-mode",  "switch", "РЕЖИМ АВТО",   "boiler-sw-mode",        460, 380, 130, 90, "#45556A"),
-    _el("btn-start","button", "ПУСК",         "boiler-btn-burner-start",660,380, 130, 90, "#2E7D32"),
-    _el("btn-stop", "button", "СТОП",         "boiler-btn-burner-stop", 830,380, 130, 90, "#B23B3B"),
+    # Панели-щиты (контрастные к серому фону холста)
+    _el("panel-ind", "panel", "ИНДИКАЦИЯ",  "panel", 40,  40,  1100, 210, "#26323F"),
+    _el("panel-ctl", "panel", "УПРАВЛЕНИЕ", "panel", 40,  300, 1100, 215, "#26323F"),
+
+    # Индикаторы (пассивные) — на верхней панели
+    _el("lamp-ready", "lamp",   "ГОТОВНОСТЬ", "boiler-lamp-run",    110, 115, 80,  80,  "#2E6B2E"),
+    _el("lamp-run",   "lamp",   "РАБОТА",     "boiler-lamp-run",    240, 115, 80,  80,  "#1F5FA8"),
+    _el("lamp-alarm", "lamp",   "АВАРИЯ",     "boiler-lamp-alarm",  370, 115, 80,  80,  "#A23B3B"),
+    _el("gauge-press","gauge",  "ДАВЛЕНИЕ",   "boiler-gauge-steam", 560, 95,  120, 120, "#1A2A3A"),
+    _el("gauge-temp", "gauge",  "ТЕМПЕРАТУРА","boiler-therm-boiler",730, 95,  120, 120, "#1A2A3A"),
+    _el("disp-state", "display","СОСТОЯНИЕ",  "boiler-disp-power",  910, 110, 200, 100, "#10212E"),
+
+    # Органы управления (интерактивные, входят в сценарий) — на нижней панели
+    _el("sw-power", "switch", "ПИТАНИЕ",      "boiler-sw-mode",         110, 365, 130, 90, "#45556A"),
+    _el("sw-vent",  "switch", "ВЕНТИЛЯЦИЯ",   "boiler-sw-mode",         290, 365, 130, 90, "#45556A"),
+    _el("sw-mode",  "switch", "РЕЖИМ АВТО",   "boiler-sw-mode",         470, 365, 130, 90, "#45556A"),
+    _el("btn-start","button", "ПУСК",         "boiler-btn-burner-start",700, 365, 130, 90, "#2E7D32"),
+    _el("btn-stop", "button", "СТОП",         "boiler-btn-burner-stop", 870, 365, 130, 90, "#B23B3B"),
 ]
 
 # Эталонный сценарий — корректная последовательность запуска с пульта.
