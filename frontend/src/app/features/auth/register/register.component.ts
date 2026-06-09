@@ -32,9 +32,24 @@ export class RegisterComponent {
     });
   }
 
+  /** Человекочитаемые названия полей формы (для сообщений об ошибках). */
+  private readonly fieldLabels: Record<string, string> = {
+    username: 'Логин', email: 'Email', full_name: 'ФИО',
+    password: 'Пароль', password2: 'Подтверждение пароля',
+  };
+
   submit(): void {
-  if (this.form.invalid) return;
   this.error = '';
+
+  // Клиентская проверка: подсветить и явно назвать незаполненные/некорректные поля.
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    const bad = Object.keys(this.form.controls)
+      .filter(k => this.form.get(k)?.invalid)
+      .map(k => this.fieldLabels[k] ?? k);
+    this.error = 'Заполните корректно: ' + bad.join(', ') + '.';
+    return;
+  }
 
   if (this.form.value.password !== this.form.value.password2) {
     this.error = 'Пароли не совпадают.';
@@ -54,10 +69,14 @@ export class RegisterComponent {
     error: err => {
       this.loading = false;
       const e = err.error ?? {};
-      this.error =
-        e.username?.[0] ?? e.email?.[0] ?? e.password?.[0] ??
-        e.password2?.[0] ?? e.full_name?.[0] ?? e.non_field_errors?.[0] ??
-        e.detail ?? 'Ошибка регистрации.';
+      // Найти первое поле с ошибкой и назвать его в сообщении.
+      const order = ['username', 'email', 'full_name', 'password', 'password2'];
+      const field = order.find(f => e[f]?.length);
+      if (field) {
+        this.error = `${this.fieldLabels[field]}: ${e[field][0]}`;
+      } else {
+        this.error = e.non_field_errors?.[0] ?? e.detail ?? 'Ошибка регистрации.';
+      }
     },
   });
 }
