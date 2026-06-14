@@ -16,6 +16,8 @@ export class RegisterComponent {
   loading = false;
   error   = '';
   success = false;
+  showPassword  = false;
+  showPassword2 = false;
 
   constructor(
     private fb:     FormBuilder,
@@ -58,10 +60,8 @@ export class RegisterComponent {
 
   this.loading = true;
 
-  // Убран password2 из payload
-  const { password2, ...payload } = this.form.value;
-
-  this.auth.register(payload).subscribe({
+  // password2 нужен серверу для проверки совпадения паролей — отправляем как есть.
+  this.auth.register(this.form.value).subscribe({
     next: () => {
       this.loading = false;
       this.success = true;   // аккаунт создан, но ждёт подтверждения админом

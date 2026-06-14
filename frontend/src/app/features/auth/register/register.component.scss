@@ -59,6 +59,29 @@
   }
 }
 
+.pwd-wrap {
+  position: relative;
+  input { padding-right: 42px; }
+}
+.pwd-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: auto;
+  margin: 0;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1;
+  color: #666;
+  cursor: pointer;
+  opacity: 0.7;
+  &:hover:not(:disabled) { background: none; opacity: 1; }
+}
+
 .error-msg {
   background: #FCEBEB;
   color: #A32D2D;

@@ -31,7 +31,13 @@
       </div>
       <div class="field">
         <label>Пароль</label>
-        <input type="password" formControlName="password" placeholder="Минимум 8 символов"/>
+        <div class="pwd-wrap">
+          <input [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="Минимум 8 символов"/>
+          <button type="button" class="pwd-toggle" (click)="showPassword = !showPassword"
+                  [attr.aria-label]="showPassword ? 'Скрыть пароль' : 'Показать пароль'">
+            {{ showPassword ? '🙈' : '👁' }}
+          </button>
+        </div>
         <span class="hint-error"
               *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
           Минимум 8 символов
@@ -39,7 +45,13 @@
       </div>
       <div class="field">
         <label>Подтверждение пароля</label>
-        <input type="password" formControlName="password2" placeholder="Повторите пароль"/>
+        <div class="pwd-wrap">
+          <input [type]="showPassword2 ? 'text' : 'password'" formControlName="password2" placeholder="Повторите пароль"/>
+          <button type="button" class="pwd-toggle" (click)="showPassword2 = !showPassword2"
+                  [attr.aria-label]="showPassword2 ? 'Скрыть пароль' : 'Показать пароль'">
+            {{ showPassword2 ? '🙈' : '👁' }}
+          </button>
+        </div>
       </div>
       <div class="error-msg" *ngIf="error">{{ error }}</div>
       <button type="submit" [disabled]="loading">
