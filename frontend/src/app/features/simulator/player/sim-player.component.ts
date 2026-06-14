@@ -1152,7 +1152,10 @@ export class SimPlayerComponent implements OnInit, AfterViewInit, OnDestroy {
     this.api.post<any>('simulations/submit/', payload).subscribe({
       next: () => {
         this.submitting = false;
-        if (this.template?.module) {
+        // Модуль засчитываем завершённым только при успешном прохождении:
+        // все шаги сценария пройдены, без аварийной защиты и нарушения режима.
+        const passed = this.completionStatus === 'completed' && !this.safetyTripped && this.processOk;
+        if (this.template?.module && passed) {
           this.api.post(`modules/${this.template.module}/complete/`, { time_spent_sec: this.elapsed }).subscribe();
         }
       },

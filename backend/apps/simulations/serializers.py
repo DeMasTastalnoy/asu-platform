@@ -113,6 +113,18 @@ class SimulationSubmitSerializer(serializers.Serializer):
 
         if enrollment_id:
             enrollment = Enrollment.objects.get(pk=enrollment_id)
+        else:
+            # Авто-привязка: находим зачисление текущего студента на курс этой
+            # симуляции, чтобы результат попадал в аналитику и «Мои результаты»
+            # даже если клиент не передал enrollment_id.
+            request = self.context.get("request")
+            user = getattr(request, "user", None)
+            if user is not None and getattr(user, "is_authenticated", False) and sim.module_id:
+                enrollment = Enrollment.objects.filter(
+                    student=user, course_id=sim.module.course_id
+                ).first()
+
+        if enrollment is not None:
             attempt_num = SimulationResult.objects.filter(
                 simulation=sim, enrollment=enrollment
             ).count() + 1
